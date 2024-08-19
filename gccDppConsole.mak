@@ -1,54 +1,34 @@
-# Makefile - gccDppConsole
+# Makefile - gccDppConsoleMiniX2
 
+# Default to no (-O0) optimisation for Debug, Release has -O2 optimisation
 ifndef CFG
-CFG=Debug
+CFG = Debug
 endif
-CC=gcc
-CFLAGS=-m32 
-CXX=g++
-CXXFLAGS=$(CFLAGS)
-ifeq "$(CFG)" "Debug"
-CFLAGS+=  -W -I./ -I/usr/include/libusb-1.0 -O0 -fexceptions -I../gccDppConsoleLinux/DeviceIO/ -I../gccDppConsoleLinux/ -g -fno-inline -D_DEBUG -D_CONSOLE 
-LD=$(CXX) $(CXXFLAGS)
-LDFLAGS=
-LDFLAGS+= 
-LIBS+= -L/usr/local/lib -lusb-1.0
-ifndef TARGET
-TARGET=gccDppConsole
+
+CC = gcc
+CXX = g++
+CFLAGS =
+CXXFLAGS = $(CFLAGS)
+
+# Compiler flags
+ifeq ($(CFG), Debug)
+	CFLAGS += -W -I./ -I/usr/include/libusb-1.0 -O0 -fexceptions -I./DeviceIO/ -g -fno-inline -D_DEBUG -D_CONSOLE
+else
+	CFLAGS += -W -I./ -I/usr/include/libusb-1.0 -O2 -fexceptions -I./DeviceIO/ -g -fno-inline -DNDEBUG -D_CONSOLE
 endif
-ifeq "$(CFG)" "Release"
-CFLAGS+=  -W -I./ -I/usr/include/libusb-1.0 -O2 -fexceptions -I../gccDppConsoleLinux/DeviceIO/ -I../gccDppConsoleLinux/ -g  -fno-inline   -DNDEBUG -D_CONSOLE 
-LD=$(CXX) $(CXXFLAGS)
-LDFLAGS=
-LDFLAGS+= 
-LIBS+= -L/usr/local/lib -lusb-1.0
-ifndef TARGET
-TARGET=gccDppConsole
-endif
-endif
-endif
-ifndef TARGET
-TARGET=gccDppConsole
-endif
-.PHONY: all
-all: $(TARGET)
 
-%.o: %.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
+# Linker flags
+LDFLAGS = #-shared # Flag for creating shared object (.so)
 
-%.o: %.cc
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $<
+LDLIBS = -lusb-1.0
+# LDLIBS = -L/usr/include/libusb-1.0 -lusb-1.0
+LIBS = -L/usr/lib/x86_64-linux-gnu -lusb-1.0
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $<
+# Target name for shared object
+TARGET_SO = libgccDppConsoleDP5.so
 
-%.o: %.cxx
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $<
-
-%.res: %.rc
-	$(RC) $(CPPFLAGS) -o $@ -i $<
-
-SOURCE_FILES= \
+# Source files (add all your source files here)
+SOURCE_FILES = \
 	./ConsoleHelper.cpp \
 	./DeviceIO/AsciiCmdUtilities.cpp \
 	./DeviceIO/DP5Protocol.cpp \
@@ -60,7 +40,8 @@ SOURCE_FILES= \
 	./stringex.cpp \
 	./gccDppConsole.cpp
 
-HEADER_FILES= \
+# Header files (add all your header files here)
+HEADER_FILES = \
 	./ConsoleHelper.h \
 	./DeviceIO/AsciiCmdUtilities.h \
 	./DeviceIO/DP5Protocol.h \
@@ -74,34 +55,30 @@ HEADER_FILES= \
 	./stringex.h \
 	./stringSplit.h
 
-OBJ_FILES= \
-	./ConsoleHelper.o \
-	./AsciiCmdUtilities.o \
-	./DP5Protocol.o \
-	./DP5Status.o \
-	./DppUtilities.o \
-	./ParsePacket.o \
-	./SendCommand.o \
-	./DppLibUsb.o \
-	./stringex.o \
-	./gccDppConsole.o 
+# Object files (automatically generated from source files)
+OBJ_FILES = $(patsubst %.cpp,%.o,$(SOURCE_FILES))
 
-RESOURCE_FILES= \
+# Dependency file
+DEP_FILE = gccDppConsole.dep
 
-SRCS=$(SOURCE_FILES) $(HEADER_FILES) $(RESOURCE_FILES) 
+# Rules
+all: $(TARGET_SO)
 
-OBJS=$(patsubst %.rc,%.res,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(patsubst %.c,%.o,$(filter %.c %.cc %.cpp %.cxx %.rc,$(SRCS)))))))
+# Rule for compiling source files into object files
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -fPIC -c $< -o $@
 
-$(TARGET): $(OBJS)
-	$(LD) $(LDFLAGS) -o $@ $(OBJ_FILES) $(LIBS)
+# Rule for linking object files into shared object (.so)
+$(TARGET_SO): $(OBJ_FILES)
+	$(CXX) $(LDFLAGS) -shared -o $@ $^ $(LDLIBS)
 
-.PHONY: clean
+# Cleanup rule
 clean:
-	-rm -f -v $(OBJS) $(TARGET) gccDppConsole.dep
+	rm -f $(OBJ_FILES) $(TARGET_SO) $(DEP_FILE)
 
-.PHONY: depends
+# Dependency generation rule
 depends:
-	-$(CXX) $(CXXFLAGS) $(CPPFLAGS) -MM $(filter %.c %.cc %.cpp %.cxx,$(SRCS)) > gccDppConsole.dep
+	$(CXX) $(CXXFLAGS) -MM $(SOURCE_FILES) > $(DEP_FILE)
 
--include gccDppConsole.dep
-
+# Include dependency file if it exists
+-include $(DEP_FILE)
