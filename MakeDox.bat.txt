@@ -1,0 +1,19 @@
+doxygen gccDppConsole_Doxyfile
+rem pause
+rem copy html\*.chm ..\..\..\DP5_SDK_Help\
+rem pause
+copy html\*.chm .\
+rem pause
+REM del html\*.css
+REM del html\*.chi
+REM del html\*.chm
+REM del html\*.hhp
+REM del html\*.html
+REM del html\*.hhk
+REM del html\*.js
+REM del html\*.map
+REM del html\*.md5
+REM del html\*.png
+REM del html\*.hhc
+REM rmdir .\html\
+pause
