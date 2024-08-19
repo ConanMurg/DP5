@@ -57,6 +57,22 @@ bool CSendCommand::DP5_CMD(unsigned char Buffer[], TRANSMIT_PACKET_TYPE XmtCmd)
             POUT.PID1 = PID1_REQ_STATUS;
             POUT.PID2 = PID2_SEND_DP4_STYLE_STATUS;   // send status only
 			break;
+		case XMTPT_SEND_STATUS_MX2:
+            POUT.PID1 = PID1_REQ_STATUS;
+            POUT.PID2 = PID2_SEND_DP4_STYLE_STATUS;   // send status only
+			break;	
+		// case XMTPT_TEXT_CONFIGURATION_MX2:
+		// 	strCfg = "";
+		// 	strCfg = CfgOptions.HwCfgDP5Out;
+		// 	lLen = (long)strCfg.length();
+		// 	if (lLen > 0) {
+		// 		strCfg = AsciiCmdUtil.MakeUpper(strCfg);
+		// 		AsciiCmdUtil.CopyAsciiData(POUT.DATA, strCfg, lLen);
+		// 	}
+		// 	POUT.PID1 = PID1_REQ_CONFIG;
+		// 	POUT.PID2 = PID2_TEXT_CONFIG_PACKET;   // text config packet
+		// 	POUT.LEN = (unsigned short)lLen;
+		// 	break;
         //case XMTPT_SEND_SPECTRUM:
 			//break;
         //case XMTPT_SEND_CLEAR_SPECTRUM:
@@ -68,6 +84,11 @@ bool CSendCommand::DP5_CMD(unsigned char Buffer[], TRANSMIT_PACKET_TYPE XmtCmd)
         case XMTPT_SEND_CLEAR_SPECTRUM_STATUS:
             POUT.PID1 = PID1_REQ_SPECTRUM;
             POUT.PID2 = PID2_SEND_CLEAR_SPECTRUM_STATUS;   // send & clear spectrum & status
+			break;
+		case XMTPT_SEND_TUBE_ILOCK_TABLE_MX2:
+			POUT.PID1 = PID1_REQ_SCOPE_MISC;
+			POUT.PID2 = PID2_SEND_MX2_TUBE_ILOCK_TABLE;
+			POUT.LEN = 0;
 			break;
         //case XMTPT_BUFFER_SPECTRUM:
 			//break;
@@ -252,6 +273,39 @@ bool CSendCommand::DP5_CMD(unsigned char Buffer[], TRANSMIT_PACKET_TYPE XmtCmd)
             POUT.PID2 = PID2_SEND_OPTION_PA_CALIBRATION; 
             POUT.LEN = 0;
 			break;
+    //----------------------------------------------------------------
+        case XMTPT_INITIATE_WARMUP_DAILY_SEQUENCE_MX2:
+            POUT.PID1 = PID1_VENDOR_REQ;
+            POUT.PID2 = PID2_INIT_MX2_WARMUP_SEQUENCE;   // Run warm-up sequence
+            POUT.LEN = 1;
+            POUT.DATA[0] = 0;                           // daily warm-up
+			break;
+        case XMTPT_INITIATE_WARMUP_MONTHLY_SEQUENCE_MX2:
+            POUT.PID1 = PID1_VENDOR_REQ;
+            POUT.PID2 = PID2_INIT_MX2_WARMUP_SEQUENCE;   // Run warm-up sequence
+            POUT.LEN = 1;
+            POUT.DATA[0] = 1;                            // monthly warm-up
+			break;
+		case XMTPT_KEEP_ALIVE_SHARING:
+			POUT.PID1 = PID1_VENDOR_REQ;
+			POUT.PID2 = PID2_ETHERNET_ALLOW_SHAREING;
+			POUT.LEN=0;
+			break;
+		case XMTPT_KEEP_ALIVE_NO_SHARING:
+			POUT.PID1 = PID1_VENDOR_REQ;
+			POUT.PID2 = PID2_ETHERNET_NO_SHARING;
+			POUT.LEN=0;
+			break;
+		case XMTPT_KEEP_ALIVE_LOCK:
+			POUT.PID1 = PID1_VENDOR_REQ;
+			POUT.PID2 = PID2_ETHERNET_LOCK_IP;
+			POUT.LEN=0;
+			break;
+		case XMTPT_SEND_FAULT_RECORD_MX2:
+			POUT.PID1 = PID1_REQ_SCOPE_MISC;
+			POUT.PID2 = PID2_SEND_MX2_FAULT_RECORD;
+			POUT.LEN=0;
+			break;
 		default:
             bCmdFound = false;
 			break;
@@ -281,6 +335,20 @@ bool CSendCommand::DP5_CMD_Config(unsigned char Buffer[], TRANSMIT_PACKET_TYPE X
 	long lLen;
 
 	switch (XmtCmd) {
+		case XMTPT_TEXT_CONFIGURATION_MX2:           // bypass any filters
+			// CONFIG_OPTIONS Needed:
+			//		CfgOptions.HwCfgDP5Out
+			strCfg = "";
+			strCfg = CfgOptions.HwCfgDP5Out;
+			lLen = (long)strCfg.length();
+			if (lLen > 0) {
+				strCfg = AsciiCmdUtil.MakeUpper(strCfg);
+				AsciiCmdUtil.CopyAsciiData(POUT.DATA, strCfg, lLen);
+			}
+			POUT.PID1 = PID1_REQ_CONFIG;
+			POUT.PID2 = PID2_TEXT_CONFIG_PACKET;   // text config packet
+			POUT.LEN = (unsigned short)lLen;
+			break;
         case XMTPT_SEND_CONFIG_PACKET_TO_HW:
 			// CONFIG_OPTIONS Needed:
 			//		CfgOptions.HwCfgDP5Out
@@ -412,6 +480,9 @@ bool CSendCommand::DP5_CMD_Data(unsigned char Buffer[], TRANSMIT_PACKET_TYPE Xmt
     POUT.LEN = 0;
 	string strCfg;
 	long idxData;
+	stringex strfn;
+	long lLen;
+
 	switch (XmtCmd) {	//REQUEST_PACKETS_TO_DP5
         case XMTPT_WRITE_512_BYTE_MISC_DATA:
             POUT.PID1 = PID1_VENDOR_REQ;
@@ -434,6 +505,44 @@ bool CSendCommand::DP5_CMD_Data(unsigned char Buffer[], TRANSMIT_PACKET_TYPE Xmt
 					}
 					bCmdFound = true;
 				}
+			}
+			break;
+		case XMTPT_READ_TEXT_CONFIGURATION_MX2:
+			// Readback configuration settings from tube
+			strCfg = "";
+			strCfg = strfn.Format("%s",DataOut);
+			lLen = (long)strCfg.length();
+			if (lLen > 0) {
+				strCfg = AsciiCmdUtil.MakeUpper(strCfg);
+				AsciiCmdUtil.CopyAsciiData(POUT.DATA, strCfg, lLen);
+				bCmdFound = true;
+				POUT.PID1 = PID1_REQ_CONFIG;
+				POUT.PID2 = PID2_CONFIG_READBACK_PACKET;
+				POUT.LEN  = (unsigned short)lLen;
+				if (! POUT_Buffer(POUT, Buffer)) {
+					bCmdFound = false;
+				}
+			} else {
+				bCmdFound = false;
+			}
+			break;
+		case XMTPT_TEXT_CONFIGURATION_MX2:
+			// Send configuration settings from tube
+			strCfg = "";
+			strCfg = strfn.Format("%s",DataOut);
+			lLen = (long)strCfg.length();
+			if (lLen > 0) {
+				strCfg = AsciiCmdUtil.MakeUpper(strCfg);
+				AsciiCmdUtil.CopyAsciiData(POUT.DATA, strCfg, lLen);
+				bCmdFound = true;
+				POUT.PID1 = PID1_REQ_CONFIG;
+				POUT.PID2 = PID2_TEXT_CONFIG_PACKET;
+				POUT.LEN  = (unsigned short)lLen;
+				if (! POUT_Buffer(POUT, Buffer)) {
+					bCmdFound = false;
+				}
+			} else {
+				bCmdFound = false;
 			}
 			break;
 		default:
@@ -466,6 +575,11 @@ bool CSendCommand::POUT_Buffer(Packet_Out POUT, unsigned char Buffer[])
     CS = (CS ^ 0xFFFF) + 1;
     Buffer[POUT.LEN + 6] = (unsigned char)((CS & 0xFF00) / 256);
     Buffer[POUT.LEN + 7] = (unsigned char)(CS & 0xFF);
+	
+	for (size_t i = 0; i < POUT.LEN + 8; ++i) {
+		printf("%02X ", Buffer[i]);
+	}
+	
     return true;
 }
 

@@ -1,3 +1,4 @@
+
 # Makefile - gccDppConsoleMiniX2
 
 # Default to no (-O0) optimisation for Debug, Release has -O2 optimisation
@@ -25,7 +26,7 @@ LDLIBS = -lusb-1.0
 LIBS = -L/usr/lib/x86_64-linux-gnu -lusb-1.0
 
 # Target name for shared object
-TARGET_SO = libgccDppConsoleDP5.so
+TARGET_SO = libgccDppConsoleMiniX2.so
 
 # Source files (add all your source files here)
 SOURCE_FILES = \

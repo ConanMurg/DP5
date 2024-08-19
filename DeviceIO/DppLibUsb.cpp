@@ -1,10 +1,10 @@
 #include "DppLibUsb.h"
+#include <iostream>
 
 CDppLibUsb::CDppLibUsb(void)
 {
 
 }
-
 CDppLibUsb::~CDppLibUsb(void)
 {
 
@@ -16,7 +16,8 @@ int CDppLibUsb::InitializeLibusb()
 	int iStatus=0;
 	iStatus = libusb_init(NULL);
 	if (iStatus != 0) {
-		fprintf(stderr, "Unable to initialize libusb. %s\n", libusb_strerror((libusb_error)iStatus));
+		std::cout << "Unable to initialize libusb" << std::endl;
+		// fprintf(stderr, "Unable to initialize libusb. %s\n", libusb_strerror((libusb_error)iStatus));
 	}
 	return iStatus;
 }
@@ -45,14 +46,14 @@ libusb_device_handle * CDppLibUsb::FindUSBDevice(int idxAmptekDevice)
 	bDeviceConnected = false;
 	devcnt = libusb_get_device_list(NULL, &devs);
 	if (devcnt < 0) {
-		fprintf(stderr, "failed to get device list");
+		// fprintf(stderr, "failed to get device list");
 		return NULL;
 	}
 	for (iDev = 0; iDev < devcnt; iDev++) {
 		device = devs[iDev];
 		int r = libusb_get_device_descriptor (device, &desc);
 		if (r < 0) {
-			fprintf(stderr, libusb_strerror((libusb_error)r));
+			// fprintf(stderr, libusb_strerror((libusb_error)r));
 			goto out;
 			//continue;
 		}
@@ -68,18 +69,22 @@ libusb_device_handle * CDppLibUsb::FindUSBDevice(int idxAmptekDevice)
 	if (found) {
 		r = libusb_open(found, &handle);
 		if (r < 0) {
-			fprintf(stderr, libusb_strerror((libusb_error)r));
+			std::cout << "Unable to Open USB Device" << std::endl;
+			// fprintf(stderr, libusb_strerror((libusb_error)r));
 			handle = NULL;
 		} else {
 			if (handle != NULL) {
 				r = libusb_claim_interface(handle, INTERFACE_NUMBER);
 				if (r >= 0) {
+					std::cout << "Device Connected and Interface Claimed" << std::endl;
 					bDeviceConnected = true; // have interface
 				} else {
-					fprintf(stderr, "libusb_claim_interface error %s\n", libusb_strerror((libusb_error)r));
+					std::cout << "Unable to claim interface" << std::endl;
+					// fprintf(stderr, "libusb_claim_interface error %s\n", libusb_strerror((libusb_error)r));
 				}
 			} else {
-				fprintf(stderr, "Unable to find a dpp device.\n");
+				std::cout << "Unable to Find USB Device" << std::endl;
+				// fprintf(stderr, "Unable to find a dpp device.\n");
 			}
 		}
 	}
@@ -95,7 +100,7 @@ void CDppLibUsb::CloseUSBDevice(libusb_device_handle * devh)
 	if (devh != NULL) {
 		r = libusb_release_interface(devh, INTERFACE_NUMBER);
 		if (r < 0) {
-			fprintf(stderr, "libusb_release_interface error %s\n", libusb_strerror((libusb_error)r));
+			// fprintf(stderr, "libusb_release_interface error %s\n", libusb_strerror((libusb_error)r));
 		}
 		libusb_close(devh);
 	}
@@ -126,15 +131,15 @@ int CDppLibUsb::SendPacketUSB(libusb_device_handle *devh, unsigned char data_out
 			if (bytes_transferred > 0) {
 				return bytes_transferred;
 			} else {
-				fprintf(stderr, "No data received in bulk transfer (%d)\n", result);
+				// fprintf(stderr, "No data received in bulk transfer (%d)\n", result);
 				return -1;
 			}
 		} else {
-			fprintf(stderr, "Error receiving data via bulk transfer %d\n", result);
+			// fprintf(stderr, "Error receiving data via bulk transfer %d\n", result);
 			return result;
 		}
 	} else {
-		fprintf(stderr, "Error sending data via bulk transfer %d\n", result);
+		// fprintf(stderr, "Error sending data via bulk transfer %d\n", result);
 		return result;
 	}
   	return 0;
@@ -166,7 +171,7 @@ int CDppLibUsb::CountDP5LibusbDevices()
 	{
 		int r = libusb_get_device_descriptor (devs[i], &desc);
 		if (r != 0) {
-			fprintf(stderr, libusb_strerror((libusb_error)r));
+			// fprintf(stderr, libusb_strerror((libusb_error)r));
 			continue;
 		}
 		if (isAmptekDP5Device(desc)) { nr++; }
@@ -186,7 +191,7 @@ void CDppLibUsb::PrintDevices()
 
 	cnt = libusb_get_device_list(NULL, &devs);
 	if (cnt < 0) {
-		fprintf(stderr, "failed to get device list");
+		// fprintf(stderr, "failed to get device list");
 		return;
 	}
 
@@ -194,7 +199,7 @@ void CDppLibUsb::PrintDevices()
 		struct libusb_device_descriptor desc;
 		int r = libusb_get_device_descriptor(dev, &desc);
 		if (r < 0) {
-			fprintf(stderr, "device descriptor error: %s", libusb_strerror((libusb_error)r));
+			// fprintf(stderr, "device descriptor error: %s", libusb_strerror((libusb_error)r));
 			return;
 		}
 		if (isAmptekDP5Device(desc)) {

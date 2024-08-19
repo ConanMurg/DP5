@@ -44,3 +44,13 @@ string CDppUtilities::BYTEVersionToString(unsigned char Version)
 	strTemp = strfn.Format("%d.%02d",((Version & 240) / 16),(Version & 15));
 	return strTemp;
 }
+
+// convert byte value to bool
+bool CDppUtilities::ByteToBool(unsigned char isTrueByte)
+{
+	if (isTrueByte) {
+		return(true);
+	} else {
+		return(false);
+	}
+}

@@ -15,4 +15,6 @@ public:
 	double BYTEVersionToDouble(unsigned char Version);
 	/// Convert a byte version value into a string.
 	string BYTEVersionToString(unsigned char Version);
+	/// convert byte value to bool
+	bool ByteToBool(unsigned char isTrueByte);
 };

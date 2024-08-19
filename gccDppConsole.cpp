@@ -17,16 +17,21 @@ using namespace std;
 #define CLEAR_TERM "clear"
 #endif
 
+
+
 CConsoleHelper chdpp;					// DPP communications functions
 bool bRunSpectrumTest = false;			// run spectrum test
 bool bRunConfigurationTest = false;		// run configuration test
 bool bHaveStatusResponse = false;		// have status response
 bool bHaveConfigFromHW = false;			// have configuration from hardware
+bool bTubeOn = false;
+
+
 
 extern "C" {
-	// connect to default dpp
-	//		CConsoleHelper::LibUsb_Connect_Default_DPP	// LibUsb connect to default DPP
-	void ConnectToDefaultDPP()
+// connect to default dpp
+//		CConsoleHelper::LibUsb_Connect_Default_DPP	// LibUsb connect to default DPP
+	bool ConnectToDefaultDPP()
 	{
 		cout << endl;
 		cout << "Running DPP LibUsb tests from console..." << endl;
@@ -35,39 +40,53 @@ extern "C" {
 		if (chdpp.LibUsb_Connect_Default_DPP()) {
 			cout << "\t\tLibUsb DPP device connected." << endl;
 			cout << "\t\tLibUsb DPP devices present: "  << chdpp.LibUsb_NumDevices << endl;
+			return true;
 		} else {
 			cout << "\t\tLibUsb DPP device not connected." << endl;
 			cout << "\t\tNo LibUsb DPP device present." << endl;
+			return false;
 		}
 	}
 
+	//void NetFinder()
+	//{
+	//	if (chdpp.LibUsb_SendCommand(XMTPT_SEND_NETFINDER_PACKET)) {	// request status
+	//		cout << "\t\t\tNetfinder Packet." << endl;
+	//	} else {
+	//		cout << "\t\t\tError sending status." << endl;
+	//	}
+	//}
+
 	// Get DPP Status
-	//		CConsoleHelper::LibUsb_isConnected						// check if DPP is connected
-	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_SEND_STATUS)	// request status
-	//		CConsoleHelper::LibUsb_ReceiveData()					// parse the status
-	//		CConsoleHelper::DppStatusString							// display status string
-	void GetDppStatus()
+	//		CConsoleHelper::LibUsb_isConnected							// check if DPP is connected
+	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_SEND_STATUS_MX2)	// request status
+	//		CConsoleHelper::LibUsb_ReceiveData()						// parse the status
+	//		CConsoleHelper::DppStatusString								// display status string
+	bool GetDppStatus()
 	{
 		if (chdpp.LibUsb_isConnected) { // send and receive status
 			cout << endl;
 			cout << "\tRequesting Status..." << endl;
 			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_STATUS)) {	// request status
 				cout << "\t\tStatus sent." << endl;
-				cout << "\t\tReceiving status..." << endl;
-				if (chdpp.LibUsb_ReceiveData()) {
-					cout << "\t\t\tStatus received..." << endl;
-					cout << chdpp.DppStatusString << endl;
-					bRunSpectrumTest = true;
-					bHaveStatusResponse = true;
-					bRunConfigurationTest = true;
-				} else {
-					cout << "\t\tError receiving status." << endl;
-				}
+				// cout << "\t\tReceiving status..." << endl;
+				return true;
 			} else {
 				cout << "\t\tError sending status." << endl;
 			}
+			// chdpp.KeepMX2_Alive();
+		} else {
+			cout << "Device Not Connected" << endl;
 		}
+		cout << endl;
+		return false;
 	}
+
+
+
+	
+
+
 
 	// Read Full DPP Configuration From Hardware			// request status before sending/receiving configurations
 	//		CONFIG_OPTIONS									// holds configuration command options
@@ -78,42 +97,37 @@ extern "C" {
 	//		CConsoleHelper::LibUsb_ReceiveData()			// parse the configuration
 	//		CConsoleHelper::HwCfgReady						// config is ready
 	void ReadDppConfigurationFromHardware(bool bDisplayCfg)
-	{
+	{	
+		cout << "ReadDppConfigFromHdwre" <<endl;
 		CONFIG_OPTIONS CfgOptions;
-		if (bHaveStatusResponse && bRunConfigurationTest) {
-			//test configuration functions
-			// Set options for XMTPT_FULL_READ_CONFIG_PACKET
-			chdpp.CreateConfigOptions(&CfgOptions, "", chdpp.DP5Stat, false);
-			cout << endl;
-			cout << "\tRequesting Full Configuration..." << endl;
-			chdpp.ClearConfigReadFormatFlags();	// clear all flags, set flags only for specific readback properties
-			//chdpp.DisplayCfg = false;	// DisplayCfg format overrides general readback format
-			chdpp.CfgReadBack = true;	// requesting general readback format
-			if (chdpp.LibUsb_SendCommand_Config(XMTPT_FULL_READ_CONFIG_PACKET, CfgOptions)) {	// request full configuration
-				if (chdpp.LibUsb_ReceiveData()) {
-					if (chdpp.HwCfgReady) {		// config is ready
-						bHaveConfigFromHW = true;
-						if (bDisplayCfg) {
-							cout << "\t\t\tConfiguration Length: " << (unsigned int)chdpp.HwCfgDP5.length() << endl;
-							cout << "\t================================================================" << endl;
-							cout << chdpp.HwCfgDP5 << endl;
-							cout << "\t================================================================" << endl;
-							cout << "\t\t\tScroll up to see configuration settings." << endl;
-							cout << "\t================================================================" << endl;
-						} else {
-							cout << "\t\tFull configuration received." << endl;
-						}
+		
+		//test configuration functions
+		// Set options for XMTPT_FULL_READ_CONFIG_PACKET
+		chdpp.CreateConfigOptions(&CfgOptions, "", chdpp.DP5Stat, false);
+		cout << endl;
+		cout << "\tRequesting Full Configuration..." << endl;
+		chdpp.ClearConfigReadFormatFlags();	// clear all flags, set flags only for specific readback properties
+		//chdpp.DisplayCfg = false;	// DisplayCfg format overrides general readback format
+		chdpp.CfgReadBack = true;	// requesting general readback format
+		if (chdpp.LibUsb_SendCommand_Config(XMTPT_FULL_READ_CONFIG_PACKET, CfgOptions)) {	// request full configuration
+			if (chdpp.LibUsb_ReceiveData()) {
+				if (chdpp.HwCfgReady) {		// config is ready
+					bHaveConfigFromHW = true;
+					if (bDisplayCfg) {
+						cout << "\t\t\tConfiguration Length: " << (unsigned int)chdpp.HwCfgDP5.length() << endl;
+						cout << "\t================================================================" << endl;
+						cout << chdpp.HwCfgDP5 << endl;
+						cout << "\t================================================================" << endl;
+						cout << "\t\t\tScroll up to see configuration settings." << endl;
+						cout << "\t================================================================" << endl;
+					} else {
+						cout << "\t\tFull configuration received." << endl;
 					}
 				}
 			}
 		}
 	}
 
-	int* getTestData(int* size) {
-		static int data[5] = {1, 2, 3, 4, 5};  // Static to ensure it remains in scope
-		*size = 5;  // Set the size of the array
-		return data;  // Return the static array
-	}
 
 
 	// Display Preset Settings
@@ -147,6 +161,50 @@ extern "C" {
 		}
 	}
 
+	void free_memory(long* ptr) {
+		cout << "free memory func" << endl;
+		delete[] ptr;
+	}
+
+	bool ResetDevice()
+	{
+		cout << "\t\tDisabling MCA for spectrum data/status clear." << endl;
+		chdpp.LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS);
+		Sleep(1000);
+		cout << "\t\tClearing spectrum data/status." << endl;
+		chdpp.LibUsb_SendCommand(XMTPT_SEND_CLEAR_SPECTRUM_STATUS);
+		Sleep(1000);
+		cout << "\t\tEnabling MCA for spectrum data acquisition with status ." << endl;
+		chdpp.LibUsb_SendCommand(XMTPT_ENABLE_MCA_MCS);
+		return true;
+	}
+
+
+	bool DisableMCA()
+	{
+		cout << "\t\tSpectrum acquisition with status done. Disabling MCA." << endl;
+		chdpp.LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS);
+		return true;
+	} 
+
+
+	long* AcquireSpectrum()
+	{
+		long* TEMP_DATA = new long[2048];
+
+		if (chdpp.LibUsb_SendCommand(XMTPT_SEND_SPECTRUM_STATUS)) {	// request spectrum+status
+				if (chdpp.LibUsb_ReceiveData()) {
+					//system(CLEAR_TERM);
+					memcpy(TEMP_DATA, chdpp.DP5Proto.SPECTRUM.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
+										
+					//chdpp.ConsoleGraph(chdpp.DP5Proto.SPECTRUM.DATA, chdpp.DP5Proto.SPECTRUM.CHANNELS, true, chdpp.DppStatusString);
+				}
+			} else {
+				cout << "\t\tProblem acquiring spectrum." << endl;
+			}
+		return TEMP_DATA;
+	}
+
 	// Acquire Spectrum
 	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS)		//disable for data/status clear
 	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_SEND_CLEAR_SPECTRUM_STATUS)  //clear spectrum/status
@@ -155,44 +213,51 @@ extern "C" {
 	//		CConsoleHelper::LibUsb_ReceiveData()							// process spectrum and data
 	//		CConsoleHelper::ConsoleGraph()	(low resolution display)		// graph data on console with status
 	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS)		// disable mca after acquisition
-	void AcquireSpectrum()
+	long* AcquireSpectrumOld()
 	{
-		int MaxMCA = 11;
+		long* TEMP_DATA = new long[2048];
+
+		int MaxMCA = 2;
 		bool bDisableMCA;
 
 		//bRunSpectrumTest = false;		// disable test
-		if (bRunSpectrumTest) {
-			cout << "\tRunning spectrum test..." << endl;
-			cout << "\t\tDisabling MCA for spectrum data/status clear." << endl;
-			chdpp.LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS);
-			Sleep(1000);
-			cout << "\t\tClearing spectrum data/status." << endl;
-			chdpp.LibUsb_SendCommand(XMTPT_SEND_CLEAR_SPECTRUM_STATUS);
-			Sleep(1000);
-			cout << "\t\tEnabling MCA for spectrum data acquisition with status ." << endl;
-			chdpp.LibUsb_SendCommand(XMTPT_ENABLE_MCA_MCS);
-			Sleep(1000);
-			for(int idxSpectrum=0;idxSpectrum<MaxMCA;idxSpectrum++) {
-				//cout << "\t\tAcquiring spectrum data set " << (idxSpectrum+1) << " of " << MaxMCA << endl;
-				if (chdpp.LibUsb_SendCommand(XMTPT_SEND_SPECTRUM_STATUS)) {	// request spectrum+status
-					if (chdpp.LibUsb_ReceiveData()) {
-						bDisableMCA = true;				// we are aquiring data, disable mca when done
-						system(CLEAR_TERM);
-						chdpp.ConsoleGraph(chdpp.DP5Proto.SPECTRUM.DATA,chdpp.DP5Proto.SPECTRUM.CHANNELS,true,chdpp.DppStatusString);
-						Sleep(2000);
-					}
-				} else {
-					cout << "\t\tProblem acquiring spectrum." << endl;
-					break;
+		
+		cout << "\tRunning spectrum test..." << endl;
+		cout << "\t\tDisabling MCA for spectrum data/status clear." << endl;
+		chdpp.LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS);
+		Sleep(1000);
+		cout << "\t\tClearing spectrum data/status." << endl;
+		chdpp.LibUsb_SendCommand(XMTPT_SEND_CLEAR_SPECTRUM_STATUS);
+		Sleep(1000);
+		cout << "\t\tEnabling MCA for spectrum data acquisition with status ." << endl;
+		chdpp.LibUsb_SendCommand(XMTPT_ENABLE_MCA_MCS);
+		Sleep(1000);
+		for(int idxSpectrum=0;idxSpectrum<MaxMCA;idxSpectrum++) {
+			//cout << "\t\tAcquiring spectrum data set " << (idxSpectrum+1) << " of " << MaxMCA << endl;
+			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_SPECTRUM_STATUS)) {	// request spectrum+status
+				if (chdpp.LibUsb_ReceiveData()) {
+					bDisableMCA = true;				// we are aquiring data, disable mca when done
+					system(CLEAR_TERM);
+					memcpy(TEMP_DATA, chdpp.DP5Proto.SPECTRUM.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
+					cout << chdpp.DP5Proto.SPECTRUM.CHANNELS <<endl; 
+
+					cout << "chdpp.ConsoleGraph" <<endl;
+					chdpp.ConsoleGraph(chdpp.DP5Proto.SPECTRUM.DATA, chdpp.DP5Proto.SPECTRUM.CHANNELS, true, chdpp.DppStatusString);
+					Sleep(2000);
 				}
-			}
-			if (bDisableMCA) {
-				//system("Pause");
-				//cout << "\t\tSpectrum acquisition with status done. Disabling MCA." << endl;
-				chdpp.LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS);
-				Sleep(1000);
+			} else {
+				cout << "\t\tProblem acquiring spectrum." << endl;
+				break;
 			}
 		}
+		if (bDisableMCA) {
+			//system("Pause");
+			//cout << "\t\tSpectrum acquisition with status done. Disabling MCA." << endl;
+			chdpp.LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS);
+			Sleep(1000);
+			}
+		
+		return TEMP_DATA;
 	}
 
 	// Read Configuration File
@@ -326,62 +391,72 @@ extern "C" {
 
 	int main(int argc, char* argv[])
 	{
-		system(CLEAR_TERM);
+		//system(CLEAR_TERM);
 		ConnectToDefaultDPP();
+		// KeepAlive();
 		cout << "Press the Enter key to continue . . .";
 		_getch();
 
 		if(!chdpp.LibUsb_isConnected) { return 1; }
 
-		system(CLEAR_TERM);
+		
+		//system(CLEAR_TERM);
 		chdpp.DP5Stat.m_DP5_Status.SerialNumber = 0;
 		GetDppStatus();
+		// KeepAlive();
 		cout << "Press the Enter key to continue . . .";
 		_getch();
 
-		if (chdpp.DP5Stat.m_DP5_Status.SerialNumber == 0) { return 1; }
+		if (chdpp.DP5Stat.STATUS_MNX.SN == 0) { return 1; }
+
+
+
+
 
 		//////	system("cls");
-		//////	SendConfigFileToDpp("PX5_Console_Test.txt");    // calls SendCommandString
+		SendConfigFileToDpp("PX5_Console_Test.txt");    // calls SendCommandString
 		//////	system("Pause");
 
-		system(CLEAR_TERM);
+
+		//system(CLEAR_TERM);
 		ReadDppConfigurationFromHardware(true);
 		cout << "Press the Enter key to continue . . .";
-		_getch(); 
+		//_getch(); 
 
-		system(CLEAR_TERM);
+		//system(CLEAR_TERM);
 		DisplayPresets();
 		cout << "Press the Enter key to continue . . .";
-		_getch(); 
+		//_getch(); 
 
-		system(CLEAR_TERM);
+		//system(CLEAR_TERM);
 		SendPresetAcquisitionTime("PRET=20;");
-		SaveSpectrumConfig();
-		cout << "Press the Enter key to continue . . .";
-		_getch(); 
+		//SaveSpectrumConfig();
+		//cout << "Press the Enter key to continue . . .";
+		//_getch(); 
 
-		system(CLEAR_TERM);
-		AcquireSpectrum();
-		SaveSpectrumFile();
-		cout << "Press the Enter key to continue . . .";
-		_getch(); 
+		//system(CLEAR_TERM);
+		//AcquireSpectrum();
+		//SaveSpectrumFile();
+		//cout << "Press the Enter key to continue . . .";
+		//_getch(); 
 
-		system(CLEAR_TERM);
-		SendPresetAcquisitionTime("PRET=OFF;");
-		cout << "Press the Enter key to continue . . .";
-		_getch(); 
+		//system(CLEAR_TERM);
+		//SendPresetAcquisitionTime("PRET=OFF;");
+		//cout << "Press the Enter key to continue . . .";
+		//_getch(); 
 
-		system(CLEAR_TERM);
-		ReadConfigFile();
-		cout << "Press the Enter key to continue . . .";
-		_getch(); 
+		//system(CLEAR_TERM);
+		//ReadConfigFile();
+		//cout << "Press the Enter key to continue . . .";
+		//_getch(); 
 
-		system(CLEAR_TERM);
+		//system(CLEAR_TERM);
 		CloseConnection();
-		cout << "Press the Enter key to continue . . .";
+		cout << "Press the Enter key to continue . . ." << endl;
 		_getch(); 
 
 		return 0;
 	}
+
+
 }

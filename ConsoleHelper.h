@@ -14,6 +14,12 @@
 #include "DP5Status.h"			// Status Decoder
 #include <time.h>				// time library for rand seed
 
+typedef int BOOL;
+#define TRUE 1
+#define FALSE 0
+
+typedef unsigned char BYTE;
+
 typedef struct _SpectrumFileType {
     string strTag;
     string strDescription;
@@ -31,10 +37,44 @@ public:
 
 	/// LibUsb communications class.
 	CDppLibUsb DppLibUsb;
+	CDP5Status DP5Status;
 	/// LibUsb is connected if true.
 	bool LibUsb_isConnected;
 	/// LibUsb number of devices found.
 	int  LibUsb_NumDevices;
+	void KeepMX2_Alive();
+	//Turn Volume on/off
+	void SendMX2_Volume(string strVol);
+	/// Turn HV on / off
+	void SendMX2_HVandI(string stringHV, string stringI);
+	//
+	void SendMX2_HV(string stringHV);
+	//
+	void DailyWarmup();
+	/// Find HV and I configuration
+	void ReadbackMX2_HVandI();
+	/// Send Command
+	void SendCommandDataMX2(TRANSMIT_PACKET_TYPE XmtCmd, string strDataIn);
+	/// Send Command
+	void SendCommandData(TRANSMIT_PACKET_TYPE XmtCmd, BYTE DataOut[]);
+	// 
+	void RemCallParsePacket(BYTE PacketIn[]);
+	//
+	void ParsePacketEx(Packet_In PIN, DppStateType DppState);
+	//
+	void ProcessNetFinderM2Ex(Packet_In PIN, DppStateType DppState);
+	//
+	void ProcessTimestampRecordMX2Ex(Packet_In PIN, DppStateType DppState);
+	//
+	void ProcessWarmupTableMX2Ex(Packet_In PIN, DppStateType DppState);
+	//
+	string Process_MNX_Warmup_Table();
+	//
+	void ProcessFaultRecordMX2Ex(Packet_In PIN, DppStateType DppState);
+	//
+	string Process_MNX_Fault_Record(Packet_In PIN);
+	//
+	void ListDevices();
 	/// LibUsb connect to the default DPP.
 	bool LibUsb_Connect_Default_DPP();
 	/// LibUsb close the current connection.
@@ -61,10 +101,19 @@ public:
 
 	/// Processes DPP data from all communication interfaces (USB,RS232,INET)
 	bool ReceiveData();
+	
+	/// EDITS
+	void ProcessTextDataEx(Packet_In PIN, DppStateType DppState);
+	void ProcessTubeInterlockTableMX2Ex(Packet_In PIN, DppStateType DppState);
+	
 	/// Processes spectrum packets.
 	void ProcessSpectrumEx(Packet_In PIN, DppStateType DppState);
 	/// Clears configuration readback format flags. 
 	void ClearConfigReadFormatFlags();
+	string strHV;
+	string strI;
+	/// Processes configuration packets.
+	void ProcessCfgReadM2Ex(Packet_In PIN, DppStateType DppState);
 	/// Processes configuration packets.
 	void ProcessCfgReadEx(Packet_In PIN, DppStateType DppState);
 	/// Populates the configuration command options data structure.
@@ -76,7 +125,7 @@ public:
 	void ConsoleGraph(long lData[], long chan, bool bLog, std::string strStatus);
 	/// DPP status display string.
 	string DppStatusString;
-
+	string strTubeInterlockTable;
 	// DPP configuration information variables 
 
 	/// FPGA 80MHz clock when true, 20MHz clock otherwise.

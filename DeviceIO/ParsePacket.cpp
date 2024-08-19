@@ -12,6 +12,9 @@ void CParsePacket::ParsePacketStatus(unsigned char P[], Packet_In *PIN)
 {
     short X;
     long CSum;
+    // for (int i = 0; i < PIN->LEN + 8 ; ++i) {
+    //     cout << std::hex << std::setfill('0') << 
+    // }
 
     CSum = 0;
     if (P[0] == SYNC1_) {
@@ -44,6 +47,10 @@ void CParsePacket::ParsePacketStatus(unsigned char P[], Packet_In *PIN)
     } else {
         PIN->STATUS = PID2_ACK_SYNC_ERROR ;               // sync error
     }
+    //cout << "incoming packet (ParsePacketStatus in ParsePacket.cpp:)" << endl;
+    //for (size_t i = 0; i < PIN->LEN + 8; ++i) {
+	//	printf("%02X ", P[i]);
+	//}
 }
 
 string CParsePacket::PID2_TextToString(string strPacketSource, unsigned char PID2)
@@ -54,7 +61,7 @@ string CParsePacket::PID2_TextToString(string strPacketSource, unsigned char PID
 		case PID2_ACK_OK:    // ACK OK
             //PID2_TextToString = strPacketSource + ": OK\t";
             //strPID2 = "ACK_OK";
-			strPID2 = "";
+			strPID2 = ": OK";
             //ACK_Received = True
  			break;
         case PID2_ACK_SYNC_ERROR:
@@ -77,10 +84,13 @@ string CParsePacket::PID2_TextToString(string strPacketSource, unsigned char PID
       //      		[] T$ = T$ + Chr(PIN.DATA(X))
       //      	[] Next X
       //      	[] End If
-            strPID2 = strPacketSource + ": Bad Parameter\t";
+            strPID2 = strPacketSource + ": Bad Parameter";
 			break;
         case PID2_ACK_BAD_HEX_REC:
             strPID2 = strPacketSource + ": Bad HEX Record\t";
+			break;
+        case PID2_ACK_UNRECOG:
+            strPID2 = strPacketSource + ": Unrecognized Command\t";
 			break;
         case PID2_ACK_FPGA_ERROR:
             strPID2 = strPacketSource + ": FPGA not initialized\t";
@@ -100,12 +110,18 @@ string CParsePacket::PID2_TextToString(string strPacketSource, unsigned char PID
         case PID2_ACK_ETHERNET_BUSY:
             strPID2 = strPacketSource + ": Ethernet sharing request\t";
 			break;
+        case PID2_ACK_I2C_ERROR:
+            strPID2 = strPacketSource + ": I2C Error\t";
+            break;
+        case PID2_ACK_OK_FPGA_UPLOAD_ADDR:
+            strPID2 = strPacketSource + ": OK + FPGA upload adress\t";
+            break;
+        case PID2_ACK_FEATURE_NOT_FPGA_SUPPORTED:
+            strPID2 = strPacketSource + ": Feature not supported by this FPGA Version\t";
+            break;
     		//[] Case :TextLog "ACK: PC5 NOT DETECTED '" + T$ + "'" + vbCrLf
         case PID2_ACK_CAL_DATA_NOT_PRESENT:
             strPID2 = strPacketSource + ": Calibration data not present\t";
-			break;
-        case PID2_ACK_UNRECOG:
-            strPID2 = strPacketSource + ": Unrecognized Command\t";
 			break;
 		default:
 			strPID2 = strPacketSource + ": Unrecognized Error\t";
@@ -122,6 +138,8 @@ long CParsePacket::ParsePacket(unsigned char P[], Packet_In *PIN)
     if (PIN->STATUS == PID2_ACK_OK) { // no errors
         if ((PIN->PID1 == PID1_RCV_STATUS) && (PIN->PID2 == PID2_SEND_DP4_STYLE_STATUS)) { // DP4-style status
             ParsePkt = preqProcessStatus;
+        } else if ((PIN->PID1 == PID1_RCV_STATUS) && (PIN->PID2 == PID2_SEND_DP4_STYLE_STATUS_MX2)) { //scope data packet
+            ParsePkt = preqProcessStatusMX2;
         } else if ((PIN->PID1 == PID1_RCV_SPECTRUM) && ((PIN->PID2 >= RCVPT_256_CHANNEL_SPECTRUM) && (PIN->PID2 <= RCVPT_8192_CHANNEL_SPECTRUM_STATUS))) { // spectrum / spectrum+status
             ParsePkt = preqProcessSpectrum;
         //} else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == PID2_SEND_SCOPE_DATA)) { //scope data packet
@@ -131,6 +149,9 @@ long CParsePacket::ParsePacket(unsigned char P[], Packet_In *PIN)
         } else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_SCOPE_DATA)) { //scope data packet
             //ScopeOverFlow = false;
             ParsePkt = preqProcessScopeData;
+        } else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_MX2_TUBE_ILOCK_TABLE)) { //scope data packet
+            //ScopeOverFlow = false;
+            ParsePkt = preqProcessTubeInterlockTableMX2;
         } else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_512_BYTE_MISC_DATA)) { //text data packet
             ParsePkt = preqProcessTextData;
         } else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_SCOPE_DATA_WITH_OVERFLOW)) { //scope data with overflow packet
@@ -145,12 +166,26 @@ long CParsePacket::ParsePacket(unsigned char P[], Packet_In *PIN)
             //ParsePkt = preqProcessHwDesc;
         } else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_CONFIG_READBACK)) {
             ParsePkt = preqProcessCfgRead;
-        //} else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_NETFINDER_READBACK)) {
-            //ParsePkt = preqProcessNetFindRead;
+        } else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_NETFINDER_READBACK)) {
+            ParsePkt = preqProcessNetFindRead;
         } else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_OPTION_PA_CALIBRATION)) {
             ParsePkt = preqProcessPaCal;
+//---------------------------------------------------------------------------------- Start Mini-X2
+        } else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_MX2_TUBE_ILOCK_TABLE)) {
+            ParsePkt = preqProcessTubeInterlockTableMX2;
+           
+        } else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_MX2_WARMUP_TABLE)) {
+            ParsePkt = preqProcessWarmupTableMX2;
+            
+        } else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_MX2_TIMESTAMP_RECORD)) {
+            ParsePkt = preqProcessTimestampRecordMX2;
+            
+        } else if ((PIN->PID1 == PID1_RCV_SCOPE_MISC) && (PIN->PID2 == RCVPT_MX2_FAULT_RECORD)) {
+            ParsePkt = preqProcessFaultRecordMX2;
+//---------------------------------------------------------------------------------- End Mini-X2
         } else if (PIN->PID1 == PID1_ACK) {
             ParsePkt = preqProcessAck;
+            // cout << "Pin1: " << PIN->PID1 << "  Pin2: " << PIN->PID2 << endl;
         } else {
             PIN->STATUS = PID2_ACK_PID_ERROR;  // unknown PID
             ParsePkt = preqProcessError;

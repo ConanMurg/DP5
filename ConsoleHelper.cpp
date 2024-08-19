@@ -4,6 +4,7 @@
 #include "stringSplit.h"
 #include "stringex.h"
 #include <string.h>
+// #include "stdafx.h"
 
 using namespace stringSplit;
 
@@ -13,10 +14,346 @@ CConsoleHelper::CConsoleHelper(void)
 	LibUsb_isConnected = false;
 	LibUsb_NumDevices = 0;
 	DppStatusString = "";
+	strTubeInterlockTable = "";
+	strHV = "";
+	strI = "";
 }
 
 CConsoleHelper::~CConsoleHelper(void)
 {
+}
+
+void CConsoleHelper::KeepMX2_Alive()
+{
+	if (LibUsb_SendCommand(XMTPT_KEEP_ALIVE_LOCK))
+	{
+		cout << "Keep Alive Lock Sent" << endl;
+	} else {
+		cout << "Failed to send Alive Lock" << endl;
+	}
+}
+
+void CConsoleHelper::SendMX2_Volume(string strVol)
+{
+    string strCmd;
+	strCmd = "VOLU=";
+	strCmd += strVol;
+	strCmd += ";";
+	cout << "strCmd: " << strCmd << endl;
+
+    SendCommandDataMX2(XMTPT_TEXT_CONFIGURATION_MX2, strCmd);
+}
+
+void CConsoleHelper::SendMX2_HVandI(string stringHV, string stringI)
+{
+	double dblHV;
+	double dblI;
+    string strCmd;
+	stringex strfn;
+
+	dblHV = atof(stringHV.c_str());
+	dblI = atof(stringI.c_str());
+    //strCmd = "HVSE=" + Trim(Val(strHV)) + ";CUSE=" + Trim(Val(strI)) + ";";
+	// strCmd = "RESC=Y;";
+	strCmd = "HVSE=";
+	strCmd += strfn.Format("%0.2f;", dblHV);
+	strCmd += "CUSE=";
+	strCmd += strfn.Format("%0.2f;", dblI);
+	cout << "strCmd: " << strCmd << endl;
+
+    SendCommandDataMX2(XMTPT_TEXT_CONFIGURATION_MX2, strCmd);
+}
+
+void CConsoleHelper::SendMX2_HV(string stringHV)
+{
+	double dblHV;
+	
+    string strCmd;
+	stringex strfn;
+
+	dblHV = atof(stringHV.c_str());
+	
+    //strCmd = "HVSE=" + Trim(Val(strHV)) + ";CUSE=" + Trim(Val(strI)) + ";";
+	strCmd = "HVSE=";
+	strCmd += strfn.Format("%0.2f;", dblHV);
+	
+	cout << "strCmd: " << strCmd << endl;
+
+    SendCommandDataMX2(XMTPT_TEXT_CONFIGURATION_MX2, strCmd);
+}
+
+void CConsoleHelper::DailyWarmup()
+{
+	LibUsb_SendCommand(XMTPT_INITIATE_WARMUP_DAILY_SEQUENCE_MX2);
+}
+
+void CConsoleHelper::ReadbackMX2_HVandI()
+{
+    string strCmd;
+    strCmd = "HVSE=?;CUSE=?;";
+	SendCommandDataMX2(XMTPT_READ_TEXT_CONFIGURATION_MX2, strCmd);
+}
+
+
+void CConsoleHelper::SendCommandDataMX2(TRANSMIT_PACKET_TYPE XmtCmd, string strDataIn)
+{
+	unsigned char DataOut[514];
+	int MaxDataLen=514;
+	int idxCh;
+	int DataLen;
+	DataLen = (int)strDataIn.length();
+	if (DataLen > 0) {
+		for(idxCh=0; idxCh < MaxDataLen; idxCh++) {
+			
+			if (idxCh < DataLen) {
+				DataOut[idxCh] = (unsigned char)strDataIn[idxCh];
+			} else {
+				DataOut[idxCh] = 0;
+			}
+		}
+		SendCommandData(XmtCmd, DataOut);
+	}
+}
+
+
+
+void CConsoleHelper::SendCommandData(TRANSMIT_PACKET_TYPE XmtCmd, BYTE DataOut[])
+{
+    bool bHaveBuffer;
+	int bSentPkt;
+	
+    bHaveBuffer = (bool) SndCmd.DP5_CMD_Data(DP5Proto.BufferOUT, XmtCmd, DataOut);
+    if (bHaveBuffer) {
+		// cout << "bhavebuffer: " << bHaveBuffer << endl;
+		bSentPkt = DppLibUsb.SendPacketUSB(DppLibUsb.DppLibusbHandle, DP5Proto.BufferOUT, DP5Proto.PacketIn);
+        if (bSentPkt) {
+			RemCallParsePacket(DP5Proto.PacketIn);
+		}  else {
+			cout << "SendCommandData in ConsoleHelper.cpp  - bSentPkt is false" << endl;
+        }
+    } else {
+		cout << "SendCommandData in ConsoleHelper.cpp - Does not have buffer" << endl;
+	}
+}
+
+
+void CConsoleHelper::RemCallParsePacket(BYTE PacketIn[])
+{
+    ParsePkt.DppState.ReqProcess = ParsePkt.ParsePacket(PacketIn, &DP5Proto.PIN);
+    ParsePacketEx(DP5Proto.PIN, ParsePkt.DppState);
+	cout << "received: " << endl;
+}
+
+void CConsoleHelper::ParsePacketEx(Packet_In PIN, DppStateType DppState)
+{
+	switch (DppState.ReqProcess) {
+		case preqProcessStatus:
+			cout << "RemCallParsePkt: ProcessStatus" << endl;
+			long idxStatus;
+			for(idxStatus=0;idxStatus<64;idxStatus++) {
+				DP5Stat.m_DP5_Status.RAW[idxStatus] = DP5Proto.PIN.DATA[idxStatus];
+			}
+			DP5Stat.Process_Status(&DP5Stat.m_DP5_Status);
+			//DP5Stat.Process_MNX_Status(&DP5Stat.STATUS_MNX);
+			DppStatusString = DP5Stat.ShowStatusValueStrings(DP5Stat.m_DP5_Status);
+			cout << DppStatusString << endl;
+			//DppStatusString = DP5Stat.MiniX2_StatusToString(DP5Stat.STATUS_MNX);
+			break;
+		case preqProcessStatusMX2:
+			cout << "RemCallParsePkt: ProcessStatusMX2" << endl;
+			for(idxStatus=0;idxStatus<64;idxStatus++) {
+				DP5Stat.STATUS_MNX.RAW[idxStatus] = DP5Proto.PIN.DATA[idxStatus];
+			}
+			//DP5Stat.Process_Status(&DP5Stat.m_DP5_Status);
+			DP5Stat.Process_MNX_Status(&DP5Stat.STATUS_MNX);
+			//DppStatusString = DP5Stat.ShowStatusValueStrings(DP5Stat.m_DP5_Status);
+			DppStatusString = DP5Stat.MiniX2_StatusToString(DP5Stat.STATUS_MNX);
+			cout << DppStatusString << endl;
+			break;
+		case preqProcessSpectrum:
+		cout << "RemCallParsePkt: ProcessSpectrum" << endl;	
+			ProcessSpectrumEx(PIN, ParsePkt.DppState);
+			break;
+		//case preqProcessScopeData:
+		//	ProcessScopeDataEx(DP5Proto.PIN, ParsePkt.DppState);
+		//	break;
+		case preqProcessTextData:
+			cout << "RemCallParsePkt: ProcessTextData" << endl;
+			ProcessTextDataEx(PIN, ParsePkt.DppState);
+			break;
+		//case preqProcessDiagData:
+		//	ProcessDiagDataEx(DP5Proto.PIN, ParsePkt.DppState);
+		//	break;
+		case preqProcessCfgRead:
+			cout << "RemCallParsePkt: ProcessCfgRead" << endl;
+			ProcessCfgReadEx(DP5Proto.PIN, ParsePkt.DppState);
+			//cout << "ProcessCgfReadM2Ex" << endl;
+			break;
+		case preqProcessTubeInterlockTableMX2:
+			cout << "RemCallParsePkt: ProcessTubeInterlockTable" << endl;
+			ProcessTubeInterlockTableMX2Ex(DP5Proto.PIN, ParsePkt.DppState);
+			break;
+		case preqProcessWarmupTableMX2:
+			cout << "RemCallParsePkt: ProcessWarmupTable" << endl;
+			ProcessWarmupTableMX2Ex(PIN, DppState);
+			break;
+		case preqProcessTimestampRecordMX2:
+			cout << "RemCallParsePkt: ProcessTimestampRecord" << endl;
+			ProcessTimestampRecordMX2Ex(PIN, DppState);
+			break;
+		case preqProcessFaultRecordMX2:
+			cout << "RemCallParsePkt: ProcessFaultRecord" << endl;
+			ProcessFaultRecordMX2Ex(PIN, DppState);
+			break;
+		case preqProcessNetFindRead:
+			cout << "RemCallParsePkt: Netfinder" << endl;
+			ProcessNetFinderM2Ex(PIN, DppState);
+			break;
+		case preqProcessAck:
+			cout << "RemCallParsePkt: ProcessAck" << endl;
+			//string strErr;
+			cout<< ParsePkt.PID2_TextToString("ACK", DP5Proto.PIN.PID2) <<endl;
+			// cout << strErr << endl;
+			// if (strErr == "ACK: Bad Parameter") {
+			// 	for (size_t i = 0; i < 2; ++i) {
+			// 		printf("%02X ", PIN.)
+			// 	}
+
+			// 	for (size_t i = 0; i < POUT.LEN + 8; ++i) {
+			// 		printf("%02X ", PIN.DATA[i]);
+			// 	}
+			// }
+			break;
+		case preqProcessError:
+			cout << "RemCallParsePkt: preqProcessError" << endl;
+			break;
+			//	DisplayError(DP5Proto.PIN, ParsePkt.DppState);
+			//	break;
+		default:
+			cout << "RemCallParsePkt: default" << endl;
+			break;
+	}
+}
+
+void CConsoleHelper::ProcessNetFinderM2Ex(Packet_In PIN, DppStateType DppState)
+{
+	string strNetFinder;
+	string strCh;
+	stringex strfn;
+	for (int idxCfg = 0; idxCfg < PIN.LEN; idxCfg++) {
+		strCh = strfn.Format("%c", PIN.DATA[idxCfg]);
+		strNetFinder += strCh;
+	}
+
+	cout << "NetFinderPacket" << endl;
+	cout << strNetFinder << endl;
+}
+
+void CConsoleHelper::ProcessTimestampRecordMX2Ex(Packet_In PIN, DppStateType DppState)
+{
+	string strTimeStamp;
+	cout << "TimeStampNotCompleted" << endl;
+}
+
+void CConsoleHelper::ProcessWarmupTableMX2Ex(Packet_In PIN, DppStateType DppState)
+{
+	cout << "Not Configured Yet" << endl;
+	//Process_MNX_Warmup_Table();
+}
+
+string CConsoleHelper::Process_MNX_Warmup_Table()
+{
+	string strWarmupTable("");
+	return(strWarmupTable);
+}
+
+// string CConsoleHelper::Process_MNX_Fault_Record(Packet_In PIN)
+// {
+// 	string strFault("");
+// 	unsigned char PIN_buffer[520];
+// 	long idxData;
+// 	Packet_In MX2PIN;
+// 	Stat_MNX STATUS_MNX2;
+// 	TubeInterlockTableType TubeInterlockTableMX2;
+// 	MiniX2WarmUpTable WarmUpTableMX2;
+// 	string strNowDTS("");
+// 	float flTemp=0.0;
+// 	stringex strfn;
+
+// 	strFault = "======= Fault Record ===========\r\n";
+// 	strFault += "======= Unit Info ===========\r\n";
+// 	strNowDTS = GetNowTimeString();
+// 	strFault += "Fault Record read at: " + strNowDTS + "\r\n";
+
+// 	//-----------------------------------------------------------------
+// 	//---- Save the data to local storage -----------------------------
+// 	//-----------------------------------------------------------------
+// 	memset(PIN_buffer,0,sizeof(PIN_buffer));
+// 	for(idxData=0; idxData<PIN.LEN; idxData++) {
+// 		PIN_buffer[idxData] = PIN.DATA[idxData];	// copy the fault record packet
+// 	}
+
+// 	//-----------------------------------------------------------------
+// 	//---- Get the timestamp table ------------------------------------
+// 	//-----------------------------------------------------------------
+// 	memset(MX2PIN.DATA,0,sizeof(MX2PIN.DATA));
+// 	MakeFaultMX2Packet(ftptTimestamp, &MX2PIN, PIN_buffer, 1, 15);
+// 	time_t ttTimeStamp;		// holds tm for calcs, not used here
+// 	strFault += "Fault occurred at: ";
+// 	strFault += Process_MNX_Timestamp(MX2PIN, &ttTimeStamp);
+// 	strFault += "\r\n";
+
+// 	//-----------------------------------------------------------------
+// 	//---- Get the status ---------------------------------------------
+// 	//-----------------------------------------------------------------
+// 	//memset(MX2PIN.DATA,0,sizeof(MX2PIN.DATA));
+// 	MakeFaultMX2Packet(ftptStatus, &MX2PIN, PIN_buffer, 18, 81);
+// 	for(idxData=0; idxData<MX2PIN.LEN; idxData++) {		// load the raw data into the status packet
+// 		STATUS_MNX2.RAW[idxData] = MX2PIN.DATA[idxData];	// copy the fault record packet
+// 	}
+// 	Process_MNX_Status(&STATUS_MNX2);
+// 	strFault += MiniX2_StatusToString(STATUS_MNX2);
+
+// 	//////////-----------------------------------------------------------------
+// 	//////////---- Get the Tube Table -----------------------------------------
+// 	//////////-----------------------------------------------------------------
+// 	//strFault += "======= Tube Table ===========\r\n";
+// 	memset(MX2PIN.DATA,0,sizeof(MX2PIN.DATA));
+// 	MakeFaultMX2Packet(ftptTube, &MX2PIN, PIN_buffer, 82, 175);
+// 	strFault += Process_MNX_Tube_Table(MX2PIN, &TubeInterlockTableMX2);
+
+// 	//-----------------------------------------------------------------
+// 	//---- Get the Warmup Table ---------------------------------------
+// 	//-----------------------------------------------------------------
+// 	//strFault += "======= Warmup Table ===========\r\n";
+// 	memset(MX2PIN.DATA,0,sizeof(MX2PIN.DATA));
+// 	MakeFaultMX2Packet(ftptWarmup, &MX2PIN, PIN_buffer, 176, 223);
+// 	strFault += Process_MNX_Warmup_Table(MX2PIN, &WarmUpTableMX2, WarmUpTableTypeMX2);
+
+// 	strFault += "======= Additional Fault Info ===========\r\n";
+
+// 	flTemp = (float)((((float)(PIN_buffer[226] & 127) * 256.0) + (float)PIN_buffer[227]) / 256.0);
+// 	strFault += "Tube HV Setpoint: " + strfn.Format("%0.2fkV\r\n",flTemp);
+
+// 	flTemp = (float)((((float)(PIN_buffer[228] & 127) * 256.0) + (float)PIN_buffer[229]) / 256.0);
+// 	strFault += "Tube Current Setpoint: " + strfn.Format("%0.2fuA\r\n", flTemp);
+
+// 	return(strFault);
+// }
+
+
+void CConsoleHelper::ProcessFaultRecordMX2Ex(Packet_In PIN, DppStateType DppState)
+{
+	string strFault;
+	// CDP5Status DP5Status;
+	strFault = DP5Status.Process_MNX_Fault_Record(PIN);
+	cout << strFault << endl;
+}
+
+
+void CConsoleHelper::ListDevices()
+{
+	DppLibUsb.PrintDevices();
 }
 
 bool CConsoleHelper::LibUsb_Connect_Default_DPP()
@@ -72,6 +409,7 @@ bool CConsoleHelper::LibUsb_SendCommand(TRANSMIT_PACKET_TYPE XmtCmd)
 		if (bHaveBuffer) {
 			bSentPkt = DppLibUsb.SendPacketUSB(DppLibUsb.DppLibusbHandle, DP5Proto.BufferOUT, DP5Proto.PacketIn);
 			if (bSentPkt) {
+				RemCallParsePacket(DP5Proto.PacketIn);
 	            bMessageSent = true;
 			}
 		}
@@ -125,20 +463,22 @@ bool CConsoleHelper::LibUsb_SendCommand_Config(TRANSMIT_PACKET_TYPE XmtCmd, CONF
     bool bHaveBuffer;
     int bSentPkt;
 	bool bMessageSent;
-
 	bMessageSent = false;
+	
 	if (DppLibUsb.bDeviceConnected) {
 		memset(&DP5Proto.BufferOUT[0],0,sizeof(DP5Proto.BufferOUT));
 		bHaveBuffer = (bool) SndCmd.DP5_CMD_Config(DP5Proto.BufferOUT, XmtCmd, CfgOptions);
 		if (bHaveBuffer) {
 			bSentPkt = DppLibUsb.SendPacketUSB(DppLibUsb.DppLibusbHandle, DP5Proto.BufferOUT, DP5Proto.PacketIn);
 			if (bSentPkt) {
-	            bMessageSent = true;
+				bMessageSent = true;
+	            RemCallParsePacket(DP5Proto.PacketIn);
 			}
 		}
 	}
 	return (bMessageSent);
 }
+
 
 bool CConsoleHelper::LibUsb_ReceiveData()
 {
@@ -146,6 +486,7 @@ bool CConsoleHelper::LibUsb_ReceiveData()
 
 	bDataReceived = true;
 	if (DppLibUsb.bDeviceConnected) { 
+		// cout << "Receive Data" << endl;
 		bDataReceived = ReceiveData();
 	}
 	return (bDataReceived);
@@ -162,6 +503,7 @@ bool CConsoleHelper::ReceiveData()
 
 	bDataReceived = true;
 	ParsePkt.DppState.ReqProcess = ParsePkt.ParsePacket(DP5Proto.PacketIn, &DP5Proto.PIN);
+	//cout << "ParsePkt: " << ParsePkt.DppState.ReqProcess << endl;
 	switch (ParsePkt.DppState.ReqProcess) {
 		case preqProcessStatus:
 			long idxStatus;
@@ -169,7 +511,19 @@ bool CConsoleHelper::ReceiveData()
 				DP5Stat.m_DP5_Status.RAW[idxStatus] = DP5Proto.PIN.DATA[idxStatus];
 			}
 			DP5Stat.Process_Status(&DP5Stat.m_DP5_Status);
+			//DP5Stat.Process_MNX_Status(&DP5Stat.STATUS_MNX);
 			DppStatusString = DP5Stat.ShowStatusValueStrings(DP5Stat.m_DP5_Status);
+			//DppStatusString = DP5Stat.MiniX2_StatusToString(DP5Stat.STATUS_MNX);
+			break;
+		case preqProcessStatusMX2:
+			for(idxStatus=0;idxStatus<64;idxStatus++) {
+				DP5Stat.STATUS_MNX.RAW[idxStatus] = DP5Proto.PIN.DATA[idxStatus];
+			}
+			//DP5Stat.Process_Status(&DP5Stat.m_DP5_Status);
+			DP5Stat.Process_MNX_Status(&DP5Stat.STATUS_MNX);
+			//DppStatusString = DP5Stat.ShowStatusValueStrings(DP5Stat.m_DP5_Status);
+			DppStatusString = DP5Stat.MiniX2_StatusToString(DP5Stat.STATUS_MNX);
+			cout << DppStatusString <<endl;
 			break;
 		case preqProcessSpectrum:
 			ProcessSpectrumEx(DP5Proto.PIN, ParsePkt.DppState);
@@ -177,18 +531,34 @@ bool CConsoleHelper::ReceiveData()
 		//case preqProcessScopeData:
 		//	ProcessScopeDataEx(DP5Proto.PIN, ParsePkt.DppState);
 		//	break;
-		//case preqProcessTextData:
-		//	ProcessTextDataEx(DP5Proto.PIN, ParsePkt.DppState);
-		//	break;
+		case preqProcessTextData:
+			ProcessTextDataEx(DP5Proto.PIN, ParsePkt.DppState);
+
+			break;
 		//case preqProcessDiagData:
 		//	ProcessDiagDataEx(DP5Proto.PIN, ParsePkt.DppState);
 		//	break;
 		case preqProcessCfgRead:
 			ProcessCfgReadEx(DP5Proto.PIN, ParsePkt.DppState);
+			//cout << "ProcessCgfReadM2Ex" << endl;
 			break;
-		//case preqProcessAck:
-		//	ProcessAck(DP5Proto.PIN.PID2);
-		//	break;
+		case preqProcessTubeInterlockTableMX2:
+			ProcessTubeInterlockTableMX2Ex(DP5Proto.PIN, ParsePkt.DppState);
+			break;
+		// case preqProcessWarmupTableMX2:
+		// 	ProcessWarmupTableMX2Ex(PIN, DppState);
+		// 	break;
+		// case preqProcessTimestampRecordMX2:
+		// 	ProcessTimestampRecordMX2Ex(PIN, DppState);
+		// 	break;
+		// case preqProcessFaultRecordMX2:
+		// 	ProcessFaultRecordMX2Ex(PIN, DppState);
+		// 	break;
+		case preqProcessAck:
+			cout << "ProcessAck" << endl;
+			cout << ParsePkt.PID2_TextToString("ACK", DP5Proto.PIN.PID2) << endl;
+			// ProcessAck(DP5Proto.PIN.PID2);
+			break;
 		//case preqProcessError:
 		//	DisplayError(DP5Proto.PIN, ParsePkt.DppState);
 		//	break;
@@ -199,12 +569,46 @@ bool CConsoleHelper::ReceiveData()
 	return (bDataReceived);
 }
 
+void CConsoleHelper::ProcessTextDataEx(Packet_In PIN, DppStateType DppState)
+{
+    long idxTextData;
+	string strTextData;
+	string strCh;
+	stringex strfn;	// = strfn.
+
+    strTextData = "";
+	for(idxTextData=0;idxTextData<512;idxTextData++) {
+		strCh = strfn.Format("%c",PIN.DATA[idxTextData]);
+        strTextData += strCh;
+	}
+}
+
+void CConsoleHelper::ProcessTubeInterlockTableMX2Ex(Packet_In PIN, DppStateType DppState)
+{
+    string strTubeInterlockTable("");
+	bool bTubeSet=false;
+	string strStatus("");
+	string strTubeType("");
+    strTubeInterlockTable = DP5Stat.Process_MNX_Tube_Table(PIN, &DP5Stat.TubeInterlockTable);
+	    
+    DP5Stat.strMX2AdvancedDisplay = DP5Stat.Process_MNX_Tube_Table(PIN, &DP5Stat.TubeInterlockTable);
+	// The Tube and Interlock Table is needed to setup the graphics and parameter constraints
+	cout << strTubeInterlockTable << endl;
+
+    if (DP5Stat.bHaveTubeType) {
+        strStatus = "Tube and Interlock Table Received\r\n";
+    } else {
+		DP5Stat.bRequestTubeType = true;
+    }
+}
+
+
 //processes spectrum and spectrum+status
 void CConsoleHelper::ProcessSpectrumEx(Packet_In PIN, DppStateType DppState)
 {
 	long idxSpectrum;
 	long idxStatus;
-    
+
 	DP5Proto.SPECTRUM.CHANNELS = (short)(256 * pow(2.0,(((PIN.PID2 - 1) & 14) / 2)));
 
 	for(idxSpectrum=0;idxSpectrum<DP5Proto.SPECTRUM.CHANNELS;idxSpectrum++) {
@@ -233,6 +637,38 @@ void CConsoleHelper::ClearConfigReadFormatFlags()
 	ScaReadBack = false;		// sca readback ready flag
 }
 
+
+void CConsoleHelper::ProcessCfgReadM2Ex(Packet_In PIN, DppStateType DppState)
+{
+	string strRawCfgIn;
+	stringex strfn;
+	string strMX2CfgIn;
+	string strCh;
+	// string strHV("");
+	// string strI("");
+
+	bool bMX2CfgReady;
+	for (int idxCfg = 0; idxCfg < PIN.LEN; idxCfg++) {
+		strCh = strfn.Format("%c", PIN.DATA[idxCfg]);
+		strRawCfgIn += strCh;
+	}
+
+	
+	// ==========================================================
+	// ===== Create Raw Configuration Buffer From Hardware ======
+	
+	// cout << "Raw Config: " << strRawCfgIn << endl;
+	if (strRawCfgIn.length() > 0) {
+		strMX2CfgIn = strRawCfgIn;
+		bMX2CfgReady = true;
+		strHV = GetCmdData("HVSE", strMX2CfgIn);
+		cout << "Voltage: " << strHV << endl;
+		strI = GetCmdData("CUSE", strMX2CfgIn);
+		cout << "Current: " << strI << endl;
+	}
+}
+
+
 void CConsoleHelper::ProcessCfgReadEx(Packet_In PIN, DppStateType DppState)
 {
 	string strRawCfgIn;
@@ -245,7 +681,7 @@ void CConsoleHelper::ProcessCfgReadEx(Packet_In PIN, DppStateType DppState)
 	bool isScaCfg = false;
 	string strDisplayCfgOut;
 	stringex strfn;
-	
+
 	strRawCfgOut = "";
 	// ==========================================================
 	// ===== Create Raw Configuration Buffer From Hardware ======
@@ -592,6 +1028,7 @@ string CConsoleHelper::GetCmdDesc(string strCmd)
 //lData=spectrum data,chan=numberof channels,bLog=display as log
 void CConsoleHelper::ConsoleGraph(long lData[], long chan, bool bLog, std::string strStatus)
 {
+	//cout << "Chan: " << endl;
 	const int ScreenW = 80;
 	const int ScreenH = 24;
 	char plot[ScreenW][ScreenH];
@@ -612,6 +1049,7 @@ void CConsoleHelper::ConsoleGraph(long lData[], long chan, bool bLog, std::strin
 	long y;
 	double logY;
 	long logYLong;
+	//cout << chan << endl;
 
 	yMax = 0;
 	for(i=0;i<chan;i++) {

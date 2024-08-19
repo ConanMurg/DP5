@@ -3,6 +3,7 @@
 
 #include <string>
 #include "DP5Protocol.h"
+#include <iostream>
 using namespace std; 
 
 typedef enum _CommType {
@@ -14,7 +15,9 @@ typedef enum _CommType {
 
 #define preqProcessNone 0x0
 #define preqProcessStatus 0x1
+#define preqProcessStatusMX2 0x3 // MINE
 #define preqProcessSpectrum 0x2
+#define preqProcessTubeInterlockTableMX2 0x11 // 17
 #define preqRequestScopeData 0x4
 #define preqProcessScopeData 0x8
 #define preqProcessTextData 0x10
@@ -25,6 +28,9 @@ typedef enum _CommType {
 #define preqProcessCfgRead 0x200
 #define preqProcessNetFindRead 0x400
 #define preqProcessPaCal 0x800
+#define preqProcessFaultRecordMX2 0x808 // MINE
+#define preqProcessWarmupTableMX2 0x818 // MINE
+#define preqProcessTimestampRecordMX2 0x828 // MINE
 //...
 #define preqProcessSCAData 0x2000
 #define preqProcessAck 0x4000
