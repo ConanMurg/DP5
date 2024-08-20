@@ -205,7 +205,7 @@ extern "C" {
 					//system(CLEAR_TERM);
 					memcpy(TEMP_DATA, chdpp.DP5Proto.SPECTRUM.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
 										
-					chdpp.ConsoleGraph(chdpp.DP5Proto.SPECTRUM.DATA, chdpp.DP5Proto.SPECTRUM.CHANNELS, true, chdpp.DppStatusString);
+					//chdpp.ConsoleGraph(chdpp.DP5Proto.SPECTRUM.DATA, chdpp.DP5Proto.SPECTRUM.CHANNELS, true, chdpp.DppStatusString);
 				}
 			} else {
 				cout << "\t\tProblem acquiring spectrum." << endl;
@@ -311,7 +311,6 @@ extern "C" {
 	// run GetDppStatus(); first to get PC5_PRESENT, DppType
 	// Includes Configuration Oversize Fix 20141224
 	bool SendConfigFileToDpp(){
-		cout << "SndCfgFileDpp" << endl;
 		string strFilename = "PX5_Console_Test.txt";
 		std::string strCfg;
 		long lCfgLen=0;						//ASCII Configuration Command String Length
@@ -325,9 +324,18 @@ extern "C" {
 		unsigned char DPP_ECO;
 
 		isPC5Present = chdpp.DP5Stat.m_DP5_Status.PC5_PRESENT;
+		cout << "isPC5Present" << isPC5Present <<endl;
+
 		DppType = chdpp.DP5Stat.m_DP5_Status.DEVICE_ID;
+
+		cout << DppType <<endl;
 		isDP5_RevDxGains = chdpp.DP5Stat.m_DP5_Status.isDP5_RevDxGains;
+
+		cout << isDP5_RevDxGains <<endl;
 		DPP_ECO = chdpp.DP5Stat.m_DP5_Status.DPP_ECO;
+
+		cout << DPP_ECO <<endl;
+
 
 		strCfg = chdpp.SndCmd.AsciiCmdUtil.GetDP5CfgStr(strFilename);
 		strCfg = chdpp.SndCmd.AsciiCmdUtil.RemoveCmdByDeviceType(strCfg,isPC5Present,DppType,isDP5_RevDxGains,DPP_ECO);

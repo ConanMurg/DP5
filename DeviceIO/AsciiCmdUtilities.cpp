@@ -1,4 +1,5 @@
 #include "AsciiCmdUtilities.h"
+#include <iostream>
 
 CAsciiCmdUtilities::CAsciiCmdUtilities(void)
 {
@@ -425,6 +426,7 @@ string CAsciiCmdUtilities::RemoveCmdByDeviceType(string strCfgDataIn, bool PC5_P
 	if (!isPAPZ) { strCfgData = RemoveCmd("PAPZ", strCfgData); }  //Pole-Zero
 	if (!isSCTC) { strCfgData = RemoveCmd("SCTC", strCfgData); }  //Scintillator Time Constant
 	if (!isPREL) { strCfgData = RemoveCmd("PREL", strCfgData); }  //Preset Live Time
+	cout <<strCfgData << endl;
 	return strCfgData;
 }
 

@@ -37,7 +37,7 @@ def dp5_analysis(mydll, queue_time, queue_data, event, pret):
         zero = str(datetime.timedelta(seconds=0))
         elaps = zero
         queue_time.put([elaps, zero, percent, 0, 0, stop])
-        spectrum_channels, spectrum_data= [], []
+        spectrum_channels, spectrum_data = [], []
 
         prev = total = time.time()
 
@@ -47,18 +47,21 @@ def dp5_analysis(mydll, queue_time, queue_data, event, pret):
         if not reset:
             raise Exception()
 
-        for dp5_time in range(5):
+        print(f'Pret: {pret}')
+        for dp5_time in range(pret):
             if time.time() - prev > 1: # Update progress bar every second
                 prev = time.time()
-                time_c = time.time() - total
+
+                time_c = max(0, time.time() - total)
+
                 elaps = str(datetime.timedelta(seconds = int(time_c)))
                 
-                time_r = pret - time_c
+                time_r = max(0, pret - time_c)
                 remain = str(datetime.timedelta(seconds =  int(time_r)))
                 
                 percent = np.around((time_c) / pret * 100, 2)
                 
-                queue_time.put([elaps, remain, percent, spectrum_channels, spectrum_data, 0])
+                queue_time.put([elaps, remain, percent, spectrum_channels.copy(), spectrum_data.copy(), 0])
 
             if event.is_set():
                 early = 1
@@ -66,17 +69,29 @@ def dp5_analysis(mydll, queue_time, queue_data, event, pret):
             
             # Begin a loop 
             data_ptr = mydll.AcquireSpectrum()
-            spectrum_data = [data_ptr[i] for i in range(2048)]
+
+            spectrum_data = [data_ptr[i] for i in range(2048)].copy()
+
+            if isinstance(spectrum_data, int):
+                spectrum_data = []
+
+            if isinstance(spectrum_data, list):
+    
+                if len(spectrum_data) != 2048:
+                    spectrum_data = []
+
+            spectrum_channels = np.arange(0, 2048, 1).tolist()
+
             mydll.free_memory(data_ptr)
 
             # print(f'Data: {data_list}')
 
-            queue_data.put(np.arange(0, 2048, 1).tolist(), spectrum_data)
+            queue_data.put([spectrum_channels.copy(), spectrum_data.copy()])
 
             if early:
                 break
             
-            time.sleep(2)
+            time.sleep(1)
 
     except FileNotFoundError("File in filenames not found"):
         queue_time.put([elaps, zero, 0, spectrum_channels, spectrum_data, 1])
@@ -93,22 +108,33 @@ def dp5_analysis(mydll, queue_time, queue_data, event, pret):
 
 
     data_ptr = mydll.AcquireSpectrum()
-    data_list = [data_ptr[i] for i in range(2048)]
+
+    spectrum_data = [data_ptr[i] for i in range(2048)].copy()
+
+    if isinstance(spectrum_data, int):
+            spectrum_data = []
+
+    if isinstance(spectrum_data, list):
+
+        if len(spectrum_data) != 2048:
+            spectrum_data = []
+    
+    spectrum_channels = np.arange(0, 2048, 1).tolist()
+
     mydll.free_memory(data_ptr)
 
-    print(f'Data: {data_list}')
-
-    queue_data.put(spectrum_channels, spectrum_data)
+    queue_data.put([spectrum_channels.copy(), spectrum_data.copy()])
 
     dis = mydll.DisableMCA()
+
     if dis:
         print('finished')
 
-    # print(graded)
-    time_c = time.time() - total
+    
+    time_c = max(0, time.time() - total)
     elaps = str(datetime.timedelta(seconds = int(time_c)))
     
-    time_r = pret - time_c
+    time_r = max(0, pret - time_c)
 
     remain = str(datetime.timedelta(seconds=  int(time_r)))
     percent = np.around((time_c) / pret * 100, 2)

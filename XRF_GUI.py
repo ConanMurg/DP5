@@ -329,11 +329,10 @@ class MyWindow:
         xmax = np.around(xmax, 0)
         
         e = np.array(self.spectrum_data)
-        
-        e = e[e > xmin]
-        e = e[e < xmax]
+    
+        e = e[xmin:xmax+1]
         # self.update_console(f'Number of events in window: {len(e)}.')
-        self.update_console(f' - Range: {xmin} - {xmax} ADU')
+        self.update_console(f' - Range: {xmin} - {xmax} Channels')
         self.update_console(f'Number of events in window: {len(e)}.')
 
 
@@ -788,7 +787,7 @@ class MyWindow:
             if not self.stop_plot:
                 self.disable_toolbar()
 
-                string = ('DP5 Histogram')
+                print('Updating Line in time display')
                 self.update_line(spectrum_channels, spectrum_data)
 
             else:
@@ -803,7 +802,7 @@ class MyWindow:
 
 
                 while not self.queue_data.empty():
-                    spectrum_data = self.queue_data.get()
+                    spectrum_channels, spectrum_data = self.queue_data.get()
 
                 if not self.stop_plot:
                     if len(spectrum_data) != 0:
@@ -861,18 +860,30 @@ class MyWindow:
         # Add axis labels
         self.fig.supxlabel("Channel")
         self.fig.supylabel("Frequency (Counts)")
-        self.canvas.draw()  # Update the canvas
+        self.canvas.draw()  # Update the canvas#
 
 
     def update_line(self, channels, data):
+
+        if isinstance(data, int):
+            print('Data is int')
+            return
+
+        if isinstance(data, list):
+            if len(data) != 2048:
+                print('No Data')
+                return
+
         ax = self.fig.gca()
-        print(data)
+        
         # Plot new data
-        #self.line_DP5.set_ydata(data)
+
+        self.line_DP5.set_ydata(data)
         
         # Set ylimit as minimum 100, otherwise 10% higher than max data value
-        #ymax = max(100, np.amax(data)*1.1)
-        #ax.set_ylim([0, ymax])
+        ymax = max(100, np.amax(data)*1.1)
+        ax.set_ylim([0, ymax])
+        self.canvas.draw() 
 
 
 
