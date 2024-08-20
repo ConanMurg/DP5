@@ -96,8 +96,9 @@ extern "C" {
 	//		CConsoleHelper::LibUsb_SendCommand_Config		// send command with options
 	//		CConsoleHelper::LibUsb_ReceiveData()			// parse the configuration
 	//		CConsoleHelper::HwCfgReady						// config is ready
-	void ReadDppConfigurationFromHardware(bool bDisplayCfg)
+	void ReadDppConfigurationFromHardware()
 	{	
+		bool bDisplayCfg=true;
 		cout << "ReadDppConfigFromHdwre" <<endl;
 		CONFIG_OPTIONS CfgOptions;
 		
@@ -154,7 +155,7 @@ extern "C" {
 		CfgOptions.HwCfgDP5Out = strPRET;
 		// send PresetAcquisitionTime string, bypass any filters, read back the mode and settings
 		if (chdpp.LibUsb_SendCommand_Config(XMTPT_SEND_CONFIG_PACKET_EX, CfgOptions)) {
-			ReadDppConfigurationFromHardware(false);	// read setting back
+			ReadDppConfigurationFromHardware();	// read setting back
 			DisplayPresets();							// display new presets
 		} else {
 			cout << "\t\tPreset Acquisition Time NOT SET" << strPRET << endl;
@@ -182,6 +183,7 @@ extern "C" {
 		Sleep(1000);
 		cout << "\t\tEnabling MCA for spectrum data acquisition with status ." << endl;
 		chdpp.LibUsb_SendCommand(XMTPT_ENABLE_MCA_MCS);
+		Sleep(1000);
 		return true;
 	}
 
@@ -219,10 +221,8 @@ extern "C" {
 	//		CConsoleHelper::LibUsb_ReceiveData()							// process spectrum and data
 	//		CConsoleHelper::ConsoleGraph()	(low resolution display)		// graph data on console with status
 	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS)		// disable mca after acquisition
-	long* AcquireSpectrumOld()
+	void AcquireSpectrumOld()
 	{
-		long* TEMP_DATA = new long[2048];
-
 		int MaxMCA = 2;
 		bool bDisableMCA;
 
@@ -244,10 +244,7 @@ extern "C" {
 				if (chdpp.LibUsb_ReceiveData()) {
 					bDisableMCA = true;				// we are aquiring data, disable mca when done
 					system(CLEAR_TERM);
-					memcpy(TEMP_DATA, chdpp.DP5Proto.SPECTRUM.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
-					cout << chdpp.DP5Proto.SPECTRUM.CHANNELS <<endl; 
-
-					cout << "chdpp.ConsoleGraph" <<endl;
+															
 					chdpp.ConsoleGraph(chdpp.DP5Proto.SPECTRUM.DATA, chdpp.DP5Proto.SPECTRUM.CHANNELS, true, chdpp.DppStatusString);
 					Sleep(2000);
 				}
@@ -263,7 +260,7 @@ extern "C" {
 			Sleep(1000);
 			}
 		
-		return TEMP_DATA;
+		
 	}
 
 	// Read Configuration File
@@ -313,7 +310,9 @@ extern "C" {
 
 	// run GetDppStatus(); first to get PC5_PRESENT, DppType
 	// Includes Configuration Oversize Fix 20141224
-	bool SendConfigFileToDpp(string strFilename){
+	bool SendConfigFileToDpp(){
+		cout << "SndCfgFileDpp" << endl;
+		string strFilename = "PX5_Console_Test.txt";
 		std::string strCfg;
 		long lCfgLen=0;						//ASCII Configuration Command String Length
 		bool bCommandSent=false;
@@ -420,12 +419,12 @@ extern "C" {
 
 
 		//////	system("cls");
-		SendConfigFileToDpp("PX5_Console_Test.txt");    // calls SendCommandString
+		SendConfigFileToDpp();    // calls SendCommandString
 		//////	system("Pause");
 
 
 		//system(CLEAR_TERM);
-		ReadDppConfigurationFromHardware(true);
+		ReadDppConfigurationFromHardware();
 		cout << "Press the Enter key to continue . . .";
 		//_getch(); 
 

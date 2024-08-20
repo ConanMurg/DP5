@@ -32,6 +32,7 @@ import matplotlib.ticker as ticker
 from CAS_ParameterGUI import ParamsWindow ######
 from DP5_Analysis import dp5_analysis 
 import ctypes
+import time
 
 __all__ = ['Parameters', 'MyWindow', 'Startup']
 
@@ -155,7 +156,7 @@ class MyWindow:
         # Configure functions
         self.mydll.ConnectToDefaultDPP.restype = ctypes.c_bool
         self.mydll.AcquireSpectrum.restype = ctypes.POINTER(ctypes.c_long)
-        self.mydll.ReadDppConfigurationFromHardware.argtypes = [ctypes.c_bool]
+        
         self.mydll.SendPRET.argtypes = [ctypes.c_char_p]
 
         # Connect to device
@@ -297,8 +298,12 @@ class MyWindow:
 
     def sendprettime(self):
         print('Sending Pret Time')
-        self.mydll.ReadDppConfigurationFromHardware(ctypes.c_bool(True))
-        self.mydll.SendPRET(b"PRET=20;")
+        self.mydll.ReadDppConfigurationFromHardware()
+        time.sleep(1)
+        self.mydll.SendConfigFileToDpp()
+        time.sleep(1)
+        self.mydll.SendPRET(b"PRET=10;")
+        time.sleep(1)
 
 
     def change_save(self):

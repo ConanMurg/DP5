@@ -47,7 +47,7 @@ def dp5_analysis(mydll, queue_time, queue_data, event, pret):
         if not reset:
             raise Exception()
 
-        for dp5_time in range(pret):
+        for dp5_time in range(5):
             if time.time() - prev > 1: # Update progress bar every second
                 prev = time.time()
                 time_c = time.time() - total
@@ -71,12 +71,12 @@ def dp5_analysis(mydll, queue_time, queue_data, event, pret):
 
             # print(f'Data: {data_list}')
 
-            queue_data.put(np.arange(0,2048, 1).tolist(), spectrum_data)
+            queue_data.put(np.arange(0, 2048, 1).tolist(), spectrum_data)
 
             if early:
                 break
             
-            time.sleep(1)
+            time.sleep(2)
 
     except FileNotFoundError("File in filenames not found"):
         queue_time.put([elaps, zero, 0, spectrum_channels, spectrum_data, 1])
