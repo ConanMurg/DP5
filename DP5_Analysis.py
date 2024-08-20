@@ -41,6 +41,12 @@ def dp5_analysis(mydll, queue_time, queue_data, event, pret):
 
         prev = total = time.time()
 
+        reset = mydll.ResetDevice()
+
+        # If resetting device successful, begin acquiring spectra.
+        if not reset:
+            raise Exception()
+
         for dp5_time in range(pret):
             if time.time() - prev > 1: # Update progress bar every second
                 prev = time.time()
@@ -48,26 +54,24 @@ def dp5_analysis(mydll, queue_time, queue_data, event, pret):
                 elaps = str(datetime.timedelta(seconds = int(time_c)))
                 
                 time_r = pret - time_c
-                remain = str(datetime.timedelta(seconds=  int(time_r)))
+                remain = str(datetime.timedelta(seconds =  int(time_r)))
                 
                 percent = np.around((time_c) / pret * 100, 2)
                 
                 queue_time.put([elaps, remain, percent, spectrum_channels, spectrum_data, 0])
 
-            reset = mydll.ResetDevice()
-
-            # If resetting device successful, begin acquiring spectra.
-            if not reset:
+            if event.is_set():
+                early = 1
                 break
             
             # Begin a loop 
             data_ptr = mydll.AcquireSpectrum()
-            data_list = [data_ptr[i] for i in range(2048)]
+            spectrum_data = [data_ptr[i] for i in range(2048)]
             mydll.free_memory(data_ptr)
 
-            print(f'Data: {data_list}')
+            # print(f'Data: {data_list}')
 
-            queue_data.put(spectrum_channels, spectrum_data)
+            queue_data.put(np.arange(0,2048, 1).tolist(), spectrum_data)
 
             if early:
                 break
@@ -87,29 +91,37 @@ def dp5_analysis(mydll, queue_time, queue_data, event, pret):
         logging.exception(err)
         queue_time.put([elaps, zero, 0, spectrum_channels, spectrum_data, 1])
 
-    else:
-        dis = mydll.DisableMCA()
-        if dis:
-            print('finished')
 
-        # print(graded)
-        time_c = time.time() - total
-        elaps = str(datetime.timedelta(seconds = int(time_c)))
-        
-        time_r = pret - time_c
+    data_ptr = mydll.AcquireSpectrum()
+    data_list = [data_ptr[i] for i in range(2048)]
+    mydll.free_memory(data_ptr)
 
-        remain = str(datetime.timedelta(seconds=  int(time_r)))
-        percent = np.around((time_c) / pret * 100, 2)
-       
-        try:
-            if early:
-                queue_time.put([elaps, zero, percent, spectrum_channels, spectrum_data, 1]) # Set stop to 1
+    print(f'Data: {data_list}')
 
-            if not early:
-                # print(f"Number of skips {l}")
-                queue_time.put([elaps, zero, 100, spectrum_channels, spectrum_data, 1]) # Set stop to 1, and progressbar to 100
+    queue_data.put(spectrum_channels, spectrum_data)
 
-        except Exception as err:
-            logging.exception(err)
-            print("Unspecified Error")
+    dis = mydll.DisableMCA()
+    if dis:
+        print('finished')
+
+    # print(graded)
+    time_c = time.time() - total
+    elaps = str(datetime.timedelta(seconds = int(time_c)))
+    
+    time_r = pret - time_c
+
+    remain = str(datetime.timedelta(seconds=  int(time_r)))
+    percent = np.around((time_c) / pret * 100, 2)
+    
+    try:
+        if early:
+            queue_time.put([elaps, zero, percent, spectrum_channels, spectrum_data, 1]) # Set stop to 1
+
+        if not early:
+            # print(f"Number of skips {l}")
+            queue_time.put([elaps, zero, 100, spectrum_channels, spectrum_data, 1]) # Set stop to 1, and progressbar to 100
+
+    except Exception as err:
+        logging.exception(err)
+        print("Unspecified Error")
 

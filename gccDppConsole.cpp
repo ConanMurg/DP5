@@ -161,6 +161,12 @@ extern "C" {
 		}
 	}
 
+	void SendPRET(const char* cstr)
+	{
+		string strPRET(cstr);
+		SendPresetAcquisitionTime(strPRET);
+	}
+
 	void free_memory(long* ptr) {
 		cout << "free memory func" << endl;
 		delete[] ptr;
@@ -197,7 +203,7 @@ extern "C" {
 					//system(CLEAR_TERM);
 					memcpy(TEMP_DATA, chdpp.DP5Proto.SPECTRUM.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
 										
-					//chdpp.ConsoleGraph(chdpp.DP5Proto.SPECTRUM.DATA, chdpp.DP5Proto.SPECTRUM.CHANNELS, true, chdpp.DppStatusString);
+					chdpp.ConsoleGraph(chdpp.DP5Proto.SPECTRUM.DATA, chdpp.DP5Proto.SPECTRUM.CHANNELS, true, chdpp.DppStatusString);
 				}
 			} else {
 				cout << "\t\tProblem acquiring spectrum." << endl;

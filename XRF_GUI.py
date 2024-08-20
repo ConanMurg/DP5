@@ -9,7 +9,6 @@ School of Physics and Astronomy
 
 Requires installation of a few modules:
  - mttkinter
- - glob
  - natsorted
 """
 from mttkinter import mtTkinter as tkr
@@ -21,18 +20,15 @@ from tkinter.filedialog import askdirectory as askd
 import os
 import csv
 import json
-import glob
 from threading import Thread, Event
 from functools import partial
 from queue import Queue
 from natsort import natsorted
-from scipy.stats import norm
 import numpy as np
 from matplotlib.figure import (Figure, SubplotParams)
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.backend_bases import key_press_handler
 import matplotlib.ticker as ticker
-from tifffile import imread
 from CAS_ParameterGUI import ParamsWindow ######
 from DP5_Analysis import dp5_analysis 
 import ctypes
@@ -154,15 +150,16 @@ class MyWindow:
             self.mydll = ctypes.CDLL('./libgccDppConsoleDP5.so')
         except:
             print("Can't open dll")
-            # raise SystemExit(0)
+            raise SystemExit(0)
 
         # Configure functions
-        # self.mydll.ConnectToDefaultDPP.restype = ctypes.c_bool
-        # self.mydll.AcquireSpectrum.restype = ctypes.POINTER(ctypes.c_long)
+        self.mydll.ConnectToDefaultDPP.restype = ctypes.c_bool
+        self.mydll.AcquireSpectrum.restype = ctypes.POINTER(ctypes.c_long)
+        self.mydll.ReadDppConfigurationFromHardware.argtypes = [ctypes.c_bool]
+        self.mydll.SendPRET.argtypes = [ctypes.c_char_p]
 
         # Connect to device
-        # result = self.mydll.ConnectToDefaultDPP()
-        result = True
+        result = self.mydll.ConnectToDefaultDPP()
         if not result:
             raise SystemExit(0)
     
@@ -199,6 +196,9 @@ class MyWindow:
         self.button_params = tkr.Button(win, command = lambda: self.params_gui(win, self.params))
         self.button_params.config(text='Update Parameters', width = 20)          # Update Params
 
+        self.button_pret = tkr.Button(win, command = self.sendprettime)
+        self.button_pret.config(text='Send Pret Time', width = 20)          # Update Params
+
 
         lbl1 = tkr.Label(win, text='Voltage (kV)')
         lbl2 = tkr.Label(win, text='Current (uA)')
@@ -221,6 +221,7 @@ class MyWindow:
         self.button_params.grid(row=1, column=0, padx=10, pady=5)
         self.button_datas.grid(row=2, column=0, padx=10, pady=5)
         self.button_quit.grid(row=3, column=0, padx=10, pady=5)
+        self.button_pret.grid(row=8, column=1, padx=10, pady=5)
         
         lbl1.grid(row=1, column=1, padx=10, pady=5)
         self.text_voltage.grid(row=1, column=2, padx=10, pady=5)
@@ -293,6 +294,11 @@ class MyWindow:
         self.plot_line(np.arange(0, 2048, 1), np.zeros(2048))
 
         win.protocol('WM_DELETE_WINDOW', lambda: self.confirm_exit(win))  # GUI exit protocol
+
+    def sendprettime(self):
+        print('Sending Pret Time')
+        self.mydll.ReadDppConfigurationFromHardware(ctypes.c_bool(True))
+        self.mydll.SendPRET(b"PRET=20;")
 
 
     def change_save(self):
@@ -534,6 +540,7 @@ class MyWindow:
             # self.event_MX2.set()
             self.worker_DP5.join()
             # self.worker_MX2.join()
+            self.mydll.CloseConnection()
 
         except AttributeError: # Will occur if threading event has not run
             pass
@@ -777,7 +784,7 @@ class MyWindow:
                 self.disable_toolbar()
 
                 string = ('DP5 Histogram')
-                self.update_line(spectrum_channels, spectrum_data, string=string)
+                self.update_line(spectrum_channels, spectrum_data)
 
             else:
                 self.enable_toolbar()
@@ -796,7 +803,7 @@ class MyWindow:
                 if not self.stop_plot:
                     if len(spectrum_data) != 0:
                         string = ('Histogram')
-                        self.plot_line(spectrum_data, nr_bins=1, string=string)
+                        self.update_line(spectrum_channels, spectrum_data)
 
 
         if not stop:
@@ -854,13 +861,13 @@ class MyWindow:
 
     def update_line(self, channels, data):
         ax = self.fig.gca()
-        
+        print(data)
         # Plot new data
-        self.line_DP5.set_ydata(data)
+        #self.line_DP5.set_ydata(data)
         
         # Set ylimit as minimum 100, otherwise 10% higher than max data value
-        ymax = max(100, np.amax(data)*1.1)
-        ax.set_ylim([0, ymax])
+        #ymax = max(100, np.amax(data)*1.1)
+        #ax.set_ylim([0, ymax])
 
 
 
