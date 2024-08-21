@@ -325,8 +325,8 @@ class MyWindow:
 
         p = self.fig.gca()
         xmin, xmax = p.get_xlim()
-        xmin = np.around(xmin, 0)
-        xmax = np.around(xmax, 0)
+        xmin = int(np.around(xmin, 0))
+        xmax = (np.around(xmax, 0))
         
         e = np.array(self.spectrum_data)
     
