@@ -33,16 +33,16 @@ extern "C" {
 //		CConsoleHelper::LibUsb_Connect_Default_DPP	// LibUsb connect to default DPP
 	bool ConnectToDefaultDPP()
 	{
-		cout << endl;
-		cout << "Running DPP LibUsb tests from console..." << endl;
-		cout << endl;
-		cout << "\tConnecting to default LibUsb device..." << endl;
+		// cout << endl;
+		// cout << "Running DPP LibUsb tests from console..." << endl;
+		// cout << endl;
+		// cout << "\tConnecting to default LibUsb device..." << endl;
 		if (chdpp.LibUsb_Connect_Default_DPP()) {
-			cout << "\t\tLibUsb DPP device connected." << endl;
+			// cout << "\t\tLibUsb DPP device connected." << endl;
 			cout << "\t\tLibUsb DPP devices present: "  << chdpp.LibUsb_NumDevices << endl;
 			return true;
 		} else {
-			cout << "\t\tLibUsb DPP device not connected." << endl;
+			// cout << "\t\tLibUsb DPP device not connected." << endl;
 			cout << "\t\tNo LibUsb DPP device present." << endl;
 			return false;
 		}
