@@ -53,8 +53,7 @@ void CConsoleHelper::SendMX2_HVandI(string stringHV, string stringI)
 
 	dblHV = atof(stringHV.c_str());
 	dblI = atof(stringI.c_str());
-    //strCmd = "HVSE=" + Trim(Val(strHV)) + ";CUSE=" + Trim(Val(strI)) + ";";
-	// strCmd = "RESC=Y;";
+
 	strCmd = "HVSE=";
 	strCmd += strfn.Format("%0.2f;", dblHV);
 	strCmd += "CUSE=";
@@ -115,8 +114,6 @@ void CConsoleHelper::SendCommandDataMX2(TRANSMIT_PACKET_TYPE XmtCmd, string strD
 	}
 }
 
-
-
 void CConsoleHelper::SendCommandData(TRANSMIT_PACKET_TYPE XmtCmd, BYTE DataOut[])
 {
     bool bHaveBuffer;
@@ -124,7 +121,6 @@ void CConsoleHelper::SendCommandData(TRANSMIT_PACKET_TYPE XmtCmd, BYTE DataOut[]
 	
     bHaveBuffer = (bool) SndCmd.DP5_CMD_Data(DP5Proto.BufferOUT, XmtCmd, DataOut);
     if (bHaveBuffer) {
-		// cout << "bhavebuffer: " << bHaveBuffer << endl;
 		bSentPkt = DppLibUsb.SendPacketUSB(DppLibUsb.DppLibusbHandle, DP5Proto.BufferOUT, DP5Proto.PacketIn);
         if (bSentPkt) {
 			RemCallParsePacket(DP5Proto.PacketIn);
@@ -154,19 +150,15 @@ void CConsoleHelper::ParsePacketEx(Packet_In PIN, DppStateType DppState)
 				DP5Stat.m_DP5_Status.RAW[idxStatus] = DP5Proto.PIN.DATA[idxStatus];
 			}
 			DP5Stat.Process_Status(&DP5Stat.m_DP5_Status);
-			//DP5Stat.Process_MNX_Status(&DP5Stat.STATUS_MNX);
 			DppStatusString = DP5Stat.ShowStatusValueStrings(DP5Stat.m_DP5_Status);
 			cout << DppStatusString << endl;
-			//DppStatusString = DP5Stat.MiniX2_StatusToString(DP5Stat.STATUS_MNX);
 			break;
 		case preqProcessStatusMX2:
 			cout << "RemCallParsePkt: ProcessStatusMX2" << endl;
 			for(idxStatus=0;idxStatus<64;idxStatus++) {
 				DP5Stat.STATUS_MNX.RAW[idxStatus] = DP5Proto.PIN.DATA[idxStatus];
 			}
-			//DP5Stat.Process_Status(&DP5Stat.m_DP5_Status);
 			DP5Stat.Process_MNX_Status(&DP5Stat.STATUS_MNX);
-			//DppStatusString = DP5Stat.ShowStatusValueStrings(DP5Stat.m_DP5_Status);
 			DppStatusString = DP5Stat.MiniX2_StatusToString(DP5Stat.STATUS_MNX);
 			cout << DppStatusString << endl;
 			break;
@@ -187,7 +179,6 @@ void CConsoleHelper::ParsePacketEx(Packet_In PIN, DppStateType DppState)
 		case preqProcessCfgRead:
 			cout << "RemCallParsePkt: ProcessCfgRead" << endl;
 			ProcessCfgReadEx(DP5Proto.PIN, ParsePkt.DppState);
-			//cout << "ProcessCgfReadM2Ex" << endl;
 			break;
 		case preqProcessTubeInterlockTableMX2:
 			cout << "RemCallParsePkt: ProcessTubeInterlockTable" << endl;
@@ -211,24 +202,11 @@ void CConsoleHelper::ParsePacketEx(Packet_In PIN, DppStateType DppState)
 			break;
 		case preqProcessAck:
 			cout << "RemCallParsePkt: ProcessAck" << endl;
-			//string strErr;
 			cout<< ParsePkt.PID2_TextToString("ACK", DP5Proto.PIN.PID2) <<endl;
-			// cout << strErr << endl;
-			// if (strErr == "ACK: Bad Parameter") {
-			// 	for (size_t i = 0; i < 2; ++i) {
-			// 		printf("%02X ", PIN.)
-			// 	}
-
-			// 	for (size_t i = 0; i < POUT.LEN + 8; ++i) {
-			// 		printf("%02X ", PIN.DATA[i]);
-			// 	}
-			// }
 			break;
 		case preqProcessError:
 			cout << "RemCallParsePkt: preqProcessError" << endl;
 			break;
-			//	DisplayError(DP5Proto.PIN, ParsePkt.DppState);
-			//	break;
 		default:
 			cout << "RemCallParsePkt: default" << endl;
 			break;
