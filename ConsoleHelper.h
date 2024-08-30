@@ -77,6 +77,10 @@ public:
 	void ListDevices();
 	/// LibUsb connect to the default DPP.
 	bool LibUsb_Connect_Default_DPP();
+	///  LibUsb count number of Amptek devices
+	int LibUsb_CountDP5Devices();
+	/// LibUsb connect to a specific DPP device.
+	bool LibUsb_Connect_Specific_DPP(int Num_Device);
 	/// LibUsb close the current connection.
 	void LibUsb_Close_Connection();
 	/// LibUsb send a command that does not require additional processing.

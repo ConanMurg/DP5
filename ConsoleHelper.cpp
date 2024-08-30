@@ -363,6 +363,39 @@ bool CConsoleHelper::LibUsb_Connect_Default_DPP()
 	return (LibUsb_isConnected);
 }
 
+int CConsoleHelper::LibUsb_CountDP5Devices()
+{
+
+	// flag is for notifications, if already connect will return dusbStatNoAction
+	// use bDeviceConnected to detect connection
+	DppLibUsb.InitializeLibusb();
+	LibUsb_NumDevices = 0;
+	DppLibUsb.NumDevices = DppLibUsb.CountDP5LibusbDevices();
+	LibUsb_NumDevices = DppLibUsb.NumDevices;
+	return (LibUsb_NumDevices);
+}
+
+
+bool CConsoleHelper::LibUsb_Connect_Specific_DPP(int Device_Num)
+{
+
+	// flag is for notifications, if already connect will return dusbStatNoAction
+	// use bDeviceConnected to detect connection
+	DppLibUsb.InitializeLibusb();
+	LibUsb_isConnected = false;
+	LibUsb_NumDevices = 0;
+	
+	DppLibUsb.CurrentDevice = Device_Num;	// set to default device
+	DppLibUsb.DppLibusbHandle = DppLibUsb.FindUSBDevice(Device_Num); //connect
+
+	if (DppLibUsb.bDeviceConnected) { // connection detected
+		LibUsb_isConnected = true;
+		LibUsb_NumDevices = DppLibUsb.NumDevices;
+	}
+	
+	return (LibUsb_isConnected);
+}
+
 void CConsoleHelper::LibUsb_Close_Connection()
 {
 	if (DppLibUsb.bDeviceConnected) { // clean-up: close usb connection

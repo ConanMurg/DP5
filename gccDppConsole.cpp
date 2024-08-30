@@ -48,6 +48,35 @@ extern "C" {
 		}
 	}
 
+
+	int CountDP5Devices()
+	{
+		int NumDevices;
+		NumDevices = chdpp.LibUsb_CountDP5Devices;
+		return (NumDevices);
+	}
+
+	bool ConnectToCorrectDPP()
+	{
+		int NumDevices;
+		NumDevices = chdpp.LibUsb_CountDP5Devices;
+		// If there are Amptek Devices connected
+		if (NumDevices > 0) {
+			// Try to connect to each - if correct device identified return true
+			for (int i = 0; i < NumDevices; ++i) {
+				if (chdpp.LibUsb_Connect_Specific_DPP(NumDevices)) {
+					cout << "Connected" << endl;
+					return true;
+				}
+				cout << "Could Not Connect" << endl;
+				return false;
+		} else {
+			cout << "No Devices Present" << endl;
+			return false;
+		}
+	}
+
+
 	//void NetFinder()
 	//{
 	//	if (chdpp.LibUsb_SendCommand(XMTPT_SEND_NETFINDER_PACKET)) {	// request status
@@ -162,11 +191,13 @@ extern "C" {
 		}
 	}
 
+
 	void SendPRET(const char* cstr)
 	{
 		string strPRET(cstr);
 		SendPresetAcquisitionTime(strPRET);
 	}
+
 
 	void free_memory(long* ptr) {
 		cout << "free memory func" << endl;
@@ -202,9 +233,8 @@ extern "C" {
 
 		if (chdpp.LibUsb_SendCommand(XMTPT_SEND_SPECTRUM_STATUS)) {	// request spectrum+status
 				if (chdpp.LibUsb_ReceiveData()) {
-					//system(CLEAR_TERM);
 					memcpy(TEMP_DATA, chdpp.DP5Proto.SPECTRUM.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
-										
+					//system(CLEAR_TERM);					
 					//chdpp.ConsoleGraph(chdpp.DP5Proto.SPECTRUM.DATA, chdpp.DP5Proto.SPECTRUM.CHANNELS, true, chdpp.DppStatusString);
 				}
 			} else {
