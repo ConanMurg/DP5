@@ -52,14 +52,14 @@ extern "C" {
 	int CountDP5Devices()
 	{
 		int NumDevices;
-		NumDevices = chdpp.LibUsb_CountDP5Devices;
+		NumDevices = chdpp.LibUsb_CountDP5Devices();
 		return (NumDevices);
 	}
 
 	bool ConnectToCorrectDPP()
 	{
 		int NumDevices;
-		NumDevices = chdpp.LibUsb_CountDP5Devices;
+		NumDevices = chdpp.LibUsb_CountDP5Devices();
 		// If there are Amptek Devices connected
 		if (NumDevices > 0) {
 			// Try to connect to each - if correct device identified return true
@@ -68,12 +68,11 @@ extern "C" {
 					cout << "Connected" << endl;
 					return true;
 				}
-				cout << "Could Not Connect" << endl;
-				return false;
-		} else {
-			cout << "No Devices Present" << endl;
-			return false;
-		}
+			}
+		} 
+			
+		cout << "No Devices Present" << endl;
+		return false;
 	}
 
 
