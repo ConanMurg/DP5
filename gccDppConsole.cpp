@@ -65,6 +65,7 @@ extern "C" {
 			// Try to connect to each - if correct device identified return true
 			for (int i = 0; i < NumDevices; ++i) {
 				if (chdpp.LibUsb_Connect_Specific_DPP(NumDevices)) {
+
 					cout << "Connected" << endl;
 					return true;
 				}
@@ -76,14 +77,14 @@ extern "C" {
 	}
 
 
-	//void NetFinder()
-	//{
-	//	if (chdpp.LibUsb_SendCommand(XMTPT_SEND_NETFINDER_PACKET)) {	// request status
-	//		cout << "\t\t\tNetfinder Packet." << endl;
-	//	} else {
-	//		cout << "\t\t\tError sending status." << endl;
-	//	}
-	//}
+	void NetFinder()
+	{
+		if (chdpp.LibUsb_SendCommand(XMTPT_SEND_NETFINDER_PACKET)) {	// request status
+			cout << "\t\t\tNetfinder Packet." << endl;
+		} else {
+			cout << "\t\t\tError sending status." << endl;
+		}
+	}
 
 	// Get DPP Status
 	//		CConsoleHelper::LibUsb_isConnected							// check if DPP is connected
