@@ -17,6 +17,32 @@
 #define REQUEST_PACKET_SIZE   8
 #define RESPONSE_PACKET_SIZE  72
 
+/*
+my_function.cpp: In function 'int main()':
+my_function.cpp:164:46: error: no match for 'operator=' (operand types are 'main()::<unnamed struct>::<unnamed struct>' and 'main()::<unnamed struct>::<unnamed struct>')
+  164 |     descriptors.hs_descriptors = descriptors.fs_descriptors;
+      |                                              ^~~~~~~~~~~~~~
+my_function.cpp:121:16: note: candidate: 'constexpr main()::<unnamed struct>::<unnamed struct>& main()::<unnamed struct>::<unnamed struct>::operator=(const main()::<unnamed struct>::<unnamed struct>&)'
+  121 |         struct {
+      |                ^
+my_function.cpp:121:16: note:   no known conversion for argument 1 from 'main()::<unnamed struct>::<unnamed struct>' to 'const main()::<unnamed struct>::<unnamed struct>&'
+my_function.cpp:121:16: note: candidate: 'constexpr main()::<unnamed struct>::<unnamed struct>& main()::<unnamed struct>::<unnamed struct>::operator=(main()::<unnamed struct>::<unnamed struct>&&)'
+my_function.cpp:121:16: note:   no known conversion for argument 1 from 'main()::<unnamed struct>::<unnamed struct>' to 'main()::<unnamed struct>::<unnamed struct>&&'
+my_function.cpp:183:31: error: use of deleted function 'main()::<unnamed struct>::<constructor>()'
+  183 |     } __attribute__((packed)) strings;
+      |                               ^~~~~~~
+my_function.cpp:177:12: note: 'main()::<unnamed struct>::<constructor>()' is implicitly deleted because the default definition would be ill-formed:
+  177 |     struct {
+      |            ^
+my_function.cpp:177:12: error: use of deleted function 'main()::<unnamed struct>::<unnamed struct>::<constructor>()'
+my_function.cpp:179:16: note: 'main()::<unnamed struct>::<unnamed struct>::<constructor>()' is implicitly deleted because the default definition would be ill-formed:
+  179 |         struct {
+      |                ^
+my_function.cpp:179:16: error: uninitialized const member in 'struct main()::<unnamed struct>::<unnamed>'
+my_function.cpp:181:24: note: 'const char main()::<unnamed struct>::<unnamed struct>::str1 [32]' should be initialized
+  181 |             const char str1[32];
+*/
+
 // Function to calculate checksum
 uint16_t calculate_checksum(const uint8_t* data, size_t length) {
     uint32_t sum = 0; // Use 32-bit to prevent overflow
