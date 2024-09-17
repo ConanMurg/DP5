@@ -18,14 +18,12 @@ using namespace std;
 #endif
 
 
-
 CConsoleHelper chdpp;					// DPP communications functions
 bool bRunSpectrumTest = false;			// run spectrum test
 bool bRunConfigurationTest = false;		// run configuration test
 bool bHaveStatusResponse = false;		// have status response
 bool bHaveConfigFromHW = false;			// have configuration from hardware
 bool bTubeOn = false;
-
 
 
 extern "C" {
@@ -107,7 +105,7 @@ extern "C" {
 		} else {
 			cout << "Device Not Connected" << endl;
 		}
-		cout << endl;
+		cout << "Device: " << chdpp.iDeviceType << endl;
 		return false;
 	}
 

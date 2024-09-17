@@ -116,6 +116,7 @@ public:
 	void ClearConfigReadFormatFlags();
 	string strHV;
 	string strI;
+	int iDeviceType;
 	/// Processes configuration packets.
 	void ProcessCfgReadM2Ex(Packet_In PIN, DppStateType DppState);
 	/// Processes configuration packets.

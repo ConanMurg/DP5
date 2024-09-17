@@ -17,6 +17,7 @@ CConsoleHelper::CConsoleHelper(void)
 	strTubeInterlockTable = "";
 	strHV = "";
 	strI = "";
+	iDeviceType = 1;
 }
 
 CConsoleHelper::~CConsoleHelper(void)
@@ -144,6 +145,7 @@ void CConsoleHelper::ParsePacketEx(Packet_In PIN, DppStateType DppState)
 {
 	switch (DppState.ReqProcess) {
 		case preqProcessStatus:
+			iDeviceType = 1;
 			cout << "RemCallParsePkt: ProcessStatus" << endl;
 			long idxStatus;
 			for(idxStatus=0;idxStatus<64;idxStatus++) {
@@ -154,6 +156,7 @@ void CConsoleHelper::ParsePacketEx(Packet_In PIN, DppStateType DppState)
 			cout << DppStatusString << endl;
 			break;
 		case preqProcessStatusMX2:
+			iDeviceType = 2;
 			cout << "RemCallParsePkt: ProcessStatusMX2" << endl;
 			for(idxStatus=0;idxStatus<64;idxStatus++) {
 				DP5Stat.STATUS_MNX.RAW[idxStatus] = DP5Proto.PIN.DATA[idxStatus];
