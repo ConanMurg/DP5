@@ -138,7 +138,7 @@ void CConsoleHelper::RemCallParsePacket(BYTE PacketIn[])
 {
     ParsePkt.DppState.ReqProcess = ParsePkt.ParsePacket(PacketIn, &DP5Proto.PIN);
     ParsePacketEx(DP5Proto.PIN, ParsePkt.DppState);
-	cout << "received: " << endl;
+	//cout << "received: " << endl;
 }
 
 void CConsoleHelper::ParsePacketEx(Packet_In PIN, DppStateType DppState)

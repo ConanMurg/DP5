@@ -1,12 +1,3 @@
-for gadget in /sys/kernel/config/usb_gadget/*; do
-    echo "Gadget: $(basename "$gadget")"
-    echo -n "UDC: "
-    cat "$gadget/UDC"
-    echo
-done
-
-
-
 #!/bin/bash
 # USB Gadget Setup Script
 
@@ -15,21 +6,21 @@ mkdir -p /sys/kernel/config/usb_gadget/my_gadget
 cd /sys/kernel/config/usb_gadget/my_gadget
 
 # Set up gadget attributes
-echo 0x1d6b > idVendor  # Linux Foundation
-echo 0x0104 > idProduct # Multifunction Composite Gadget
-echo 0x0100 > bcdDevice # Device release number
-echo 0x0200 > bcdUSB    # USB 2.0
+echo 0x10C4 | sudo tee idVendor  # Linux Foundation
+echo 0x842A | sudo tee idProduct # Multifunction Composite Gadget
+echo 0x0100 | sudo tee bcdDevice # Device release number
+echo 0x0200 | sudo tee bcdUSB    # USB 2.0
 
 # Create strings
 mkdir -p strings/0x409
-echo "0123456789" > strings/0x409/serialnumber
-echo "Your Manufacturer" > strings/0x409/manufacturer
-echo "Virtual USB Device" > strings/0x409/product
+echo "0123456789" | sudo tee strings/0x409/serialnumber
+echo "Your Manufacturer" | sudo tee strings/0x409/manufacturer
+echo "Virtual USB Device" | sudo tee strings/0x409/product
 
 # Create configurations
 mkdir -p configs/c.1/strings/0x409
-echo "Config 1: FunctionFS" > configs/c.1/strings/0x409/configuration
-echo 250 > configs/c.1/MaxPower
+echo "Config 1: FunctionFS" | sudo tee configs/c.1/strings/0x409/configuration
+echo 250 | sudo tee configs/c.1/MaxPower
 
 # Create FunctionFS function
 mkdir -p functions/ffs.my_function

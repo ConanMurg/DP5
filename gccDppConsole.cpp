@@ -198,7 +198,7 @@ extern "C" {
 
 
 	void free_memory(long* ptr) {
-		cout << "free memory func" << endl;
+		// cout << "free memory func" << endl;
 		delete[] ptr;
 	}
 
