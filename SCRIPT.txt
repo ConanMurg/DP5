@@ -1,3 +1,12 @@
+for gadget in /sys/kernel/config/usb_gadget/*; do
+    echo "Gadget: $(basename "$gadget")"
+    echo -n "UDC: "
+    cat "$gadget/UDC"
+    echo
+done
+
+
+
 #!/bin/bash
 # USB Gadget Setup Script
 
