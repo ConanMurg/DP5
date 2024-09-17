@@ -1,0 +1,37 @@
+#!/bin/bash
+# USB Gadget Setup Script
+
+# Create gadget directory
+mkdir -p /sys/kernel/config/usb_gadget/my_gadget
+cd /sys/kernel/config/usb_gadget/my_gadget
+
+# Set up gadget attributes
+echo 0x1d6b > idVendor  # Linux Foundation
+echo 0x0104 > idProduct # Multifunction Composite Gadget
+echo 0x0100 > bcdDevice # Device release number
+echo 0x0200 > bcdUSB    # USB 2.0
+
+# Create strings
+mkdir -p strings/0x409
+echo "0123456789" > strings/0x409/serialnumber
+echo "Your Manufacturer" > strings/0x409/manufacturer
+echo "Virtual USB Device" > strings/0x409/product
+
+# Create configurations
+mkdir -p configs/c.1/strings/0x409
+echo "Config 1: FunctionFS" > configs/c.1/strings/0x409/configuration
+echo 250 > configs/c.1/MaxPower
+
+# Create FunctionFS function
+mkdir -p functions/ffs.my_function
+
+# Link function to configuration
+ln -s functions/ffs.my_function configs/c.1/ 2>/dev/null
+
+# Mount FunctionFS
+mkdir -p /dev/ffs-my_function
+mountpoint -q /dev/ffs-my_function || mount -t functionfs my_function /dev/ffs-my_function
+
+# Bind UDC
+UDC=$(ls /sys/class/udc/ | head -n 1)
+echo $UDC > UDC
