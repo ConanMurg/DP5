@@ -26,7 +26,7 @@ LDLIBS = -lusb-1.0
 LIBS = -L/usr/lib/x86_64-linux-gnu -lusb-1.0
 
 # Target name for shared object
-TARGET_SO = libgccDppConsoleDP5.so
+TARGET_SO = libgccDppConsoleMiniX2.so
 
 # Source files (add all your source files here)
 SOURCE_FILES = \
@@ -39,7 +39,7 @@ SOURCE_FILES = \
 	./DeviceIO/SendCommand.cpp \
 	./DeviceIO/DppLibUsb.cpp \
 	./stringex.cpp \
-	./gccDppConsole.cpp
+	./gccDppConsoleMX2.cpp
 
 # Header files (add all your header files here)
 HEADER_FILES = \

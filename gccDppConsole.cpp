@@ -44,6 +44,7 @@ extern "C" {
 		}
 	}
 
+
 	int CountDP5Devices()
 	{
 		int NumDevices;
@@ -407,7 +408,7 @@ extern "C" {
 	{
 		if (chdpp.LibUsb_isConnected) { // send and receive status
 			if (chdpp.LibUsb_Close_Connection()) {
-				cout << "DPP device connection closed." << endl;
+				cout << "DP5 device connection closed." << endl;
 			}
 		}
 	}
