@@ -36,11 +36,9 @@ extern "C" {
 		// cout << endl;
 		// cout << "\tConnecting to default LibUsb device..." << endl;
 		if (chdpp.LibUsb_Connect_Default_DPP()) {
-			// cout << "\t\tLibUsb DPP device connected." << endl;
 			cout << "\t\tLibUsb DPP devices present: "  << chdpp.LibUsb_NumDevices << endl;
 			return true;
 		} else {
-			// cout << "\t\tLibUsb DPP device not connected." << endl;
 			cout << "\t\tNo LibUsb DPP device present." << endl;
 			return false;
 		}
@@ -54,25 +52,50 @@ extern "C" {
 		return (NumDevices);
 	}
 
-	bool ConnectToCorrectDPP()
+	bool ConnectToSpecificDPP(int NumDevice)
 	{
-		int NumDevices;
-		NumDevices = chdpp.LibUsb_CountDP5Devices();
-		// If there are Amptek Devices connected
-		if (NumDevices > 0) {
-			// Try to connect to each - if correct device identified return true
-			for (int i = 0; i < NumDevices; ++i) {
-				if (chdpp.LibUsb_Connect_Specific_DPP(NumDevices)) {
-
-					cout << "Connected" << endl;
-					return true;
-				}
-			}
-		} 
-			
-		cout << "No Devices Present" << endl;
-		return false;
+		if (chdpp.LibUsb_Connect_Specific_DPP(NumDevice)) {
+			return true;
+		} else {
+			cout << "\t\tNo LibUsb DPP device present." << endl;
+			return false;
+		}
 	}
+
+	int GetDeviceType()
+	{
+		iDeviceType = 0;
+		if (chdpp.LibUsb_isConnected) { // send and receive status
+			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_STATUS)) {	// request status
+				iDeviceType = chdpp.iDeviceType;
+				cout << "Device: " iDeviceType << endl;
+				return iDeviceType;
+			} 
+		} 
+		cout << "Can't find Device Type" << endl;
+		return iDeviceType;
+	}
+
+
+	// bool ConnectToCorrectDPP()
+	// {
+	// 	int NumDevices;
+	// 	NumDevices = chdpp.LibUsb_CountDP5Devices();
+	// 	// If there are Amptek Devices connected
+	// 	if (NumDevices > 0) {
+	// 		// Try to connect to each - if correct device identified return true
+	// 		for (int i = 0; i < NumDevices; ++i) {
+	// 			if (chdpp.LibUsb_Connect_Specific_DPP(NumDevices)) {
+
+	// 				cout << "Connected" << endl;
+	// 				return true;
+	// 			}
+	// 		}
+	// 	} 
+			
+	// 	cout << "No Devices Present" << endl;
+	// 	return false;
+	// }
 
 
 	void NetFinder()
@@ -92,27 +115,17 @@ extern "C" {
 	bool GetDppStatus()
 	{
 		if (chdpp.LibUsb_isConnected) { // send and receive status
-			cout << endl;
-			cout << "\tRequesting Status..." << endl;
 			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_STATUS)) {	// request status
-				cout << "\t\tStatus sent." << endl;
-				// cout << "\t\tReceiving status..." << endl;
 				return true;
 			} else {
-				cout << "\t\tError sending status." << endl;
+				cout << "Error sending status." << endl;
 			}
-			// chdpp.KeepMX2_Alive();
 		} else {
-			cout << "Device Not Connected" << endl;
+			cout << "Device Not Connected." << endl;
 		}
-		cout << "Device: " << chdpp.iDeviceType << endl;
+
 		return false;
 	}
-
-
-
-	
-
 
 
 	// Read Full DPP Configuration From Hardware			// request status before sending/receiving configurations
@@ -198,7 +211,6 @@ extern "C" {
 
 
 	void free_memory(long* ptr) {
-		// cout << "free memory func" << endl;
 		delete[] ptr;
 	}
 
@@ -232,12 +244,11 @@ extern "C" {
 		if (chdpp.LibUsb_SendCommand(XMTPT_SEND_SPECTRUM_STATUS)) {	// request spectrum+status
 				if (chdpp.LibUsb_ReceiveData()) {
 					memcpy(TEMP_DATA, chdpp.DP5Proto.SPECTRUM.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
-					//system(CLEAR_TERM);					
-					//chdpp.ConsoleGraph(chdpp.DP5Proto.SPECTRUM.DATA, chdpp.DP5Proto.SPECTRUM.CHANNELS, true, chdpp.DppStatusString);
 				}
 			} else {
 				cout << "\t\tProblem acquiring spectrum." << endl;
 			}
+
 		return TEMP_DATA;
 	}
 
@@ -253,9 +264,6 @@ extern "C" {
 	{
 		int MaxMCA = 2;
 		bool bDisableMCA;
-
-		//bRunSpectrumTest = false;		// disable test
-		
 		cout << "\tRunning spectrum test..." << endl;
 		cout << "\t\tDisabling MCA for spectrum data/status clear." << endl;
 		chdpp.LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS);
@@ -287,8 +295,6 @@ extern "C" {
 			chdpp.LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS);
 			Sleep(1000);
 			}
-		
-		
 	}
 
 	// Read Configuration File
@@ -304,7 +310,7 @@ extern "C" {
 	}
 
 	//Following is an example of loading a configuration from file 
-	//then sending the configuration to the DPP device.
+	//  then sending the configuration to the DPP device.
 	//	SendConfigFileToDpp("NaI_detector_cfg.txt");    // calls SendCommandString
 	//	AcquireSpectrum();
 	//
@@ -400,10 +406,9 @@ extern "C" {
 	void CloseConnection()
 	{
 		if (chdpp.LibUsb_isConnected) { // send and receive status
-			cout << endl;
-			cout << "\tClosing connection to default LibUsb device..." << endl;
-			chdpp.LibUsb_Close_Connection();
-			cout << "\t\tDPP device connection closed." << endl;
+			if (chdpp.LibUsb_Close_Connection()) {
+				cout << "DPP device connection closed." << endl;
+			}
 		}
 	}
 
@@ -430,74 +435,74 @@ extern "C" {
 		chdpp.SaveSpectrumStringToFile(strSpectrum);	// save spectrum file string to file
 	}
 
-	int main(int argc, char* argv[])
-	{
-		//system(CLEAR_TERM);
-		ConnectToDefaultDPP();
-		// KeepAlive();
-		cout << "Press the Enter key to continue . . .";
-		_getch();
+	// int main(int argc, char* argv[])
+	// {
+	// 	//system(CLEAR_TERM);
+	// 	ConnectToDefaultDPP();
+	// 	// KeepAlive();
+	// 	cout << "Press the Enter key to continue . . .";
+	// 	_getch();
 
-		if(!chdpp.LibUsb_isConnected) { return 1; }
+	// 	if(!chdpp.LibUsb_isConnected) { return 1; }
 
 		
-		//system(CLEAR_TERM);
-		chdpp.DP5Stat.m_DP5_Status.SerialNumber = 0;
-		GetDppStatus();
-		// KeepAlive();
-		cout << "Press the Enter key to continue . . .";
-		_getch();
+	// 	//system(CLEAR_TERM);
+	// 	chdpp.DP5Stat.m_DP5_Status.SerialNumber = 0;
+	// 	GetDppStatus();
+	// 	// KeepAlive();
+	// 	cout << "Press the Enter key to continue . . .";
+	// 	_getch();
 
-		if (chdpp.DP5Stat.STATUS_MNX.SN == 0) { return 1; }
-
-
+	// 	if (chdpp.DP5Stat.STATUS_MNX.SN == 0) { return 1; }
 
 
 
-		//////	system("cls");
-		SendConfigFileToDpp();    // calls SendCommandString
-		//////	system("Pause");
 
 
-		//system(CLEAR_TERM);
-		ReadDppConfigurationFromHardware();
-		cout << "Press the Enter key to continue . . .";
-		//_getch(); 
+	// 	//////	system("cls");
+	// 	SendConfigFileToDpp();    // calls SendCommandString
+	// 	//////	system("Pause");
 
-		//system(CLEAR_TERM);
-		DisplayPresets();
-		cout << "Press the Enter key to continue . . .";
-		//_getch(); 
 
-		//system(CLEAR_TERM);
-		SendPresetAcquisitionTime("PRET=20;");
-		//SaveSpectrumConfig();
-		//cout << "Press the Enter key to continue . . .";
-		//_getch(); 
+	// 	//system(CLEAR_TERM);
+	// 	ReadDppConfigurationFromHardware();
+	// 	cout << "Press the Enter key to continue . . .";
+	// 	//_getch(); 
 
-		//system(CLEAR_TERM);
-		//AcquireSpectrum();
-		//SaveSpectrumFile();
-		//cout << "Press the Enter key to continue . . .";
-		//_getch(); 
+	// 	//system(CLEAR_TERM);
+	// 	DisplayPresets();
+	// 	cout << "Press the Enter key to continue . . .";
+	// 	//_getch(); 
 
-		//system(CLEAR_TERM);
-		//SendPresetAcquisitionTime("PRET=OFF;");
-		//cout << "Press the Enter key to continue . . .";
-		//_getch(); 
+	// 	//system(CLEAR_TERM);
+	// 	SendPresetAcquisitionTime("PRET=20;");
+	// 	//SaveSpectrumConfig();
+	// 	//cout << "Press the Enter key to continue . . .";
+	// 	//_getch(); 
 
-		//system(CLEAR_TERM);
-		//ReadConfigFile();
-		//cout << "Press the Enter key to continue . . .";
-		//_getch(); 
+	// 	//system(CLEAR_TERM);
+	// 	//AcquireSpectrum();
+	// 	//SaveSpectrumFile();
+	// 	//cout << "Press the Enter key to continue . . .";
+	// 	//_getch(); 
 
-		//system(CLEAR_TERM);
-		CloseConnection();
-		cout << "Press the Enter key to continue . . ." << endl;
-		_getch(); 
+	// 	//system(CLEAR_TERM);
+	// 	//SendPresetAcquisitionTime("PRET=OFF;");
+	// 	//cout << "Press the Enter key to continue . . .";
+	// 	//_getch(); 
 
-		return 0;
-	}
+	// 	//system(CLEAR_TERM);
+	// 	//ReadConfigFile();
+	// 	//cout << "Press the Enter key to continue . . .";
+	// 	//_getch(); 
+
+	// 	//system(CLEAR_TERM);
+	// 	CloseConnection();
+	// 	cout << "Press the Enter key to continue . . ." << endl;
+	// 	_getch(); 
+
+	// 	return 0;
+	// }
 
 
 }

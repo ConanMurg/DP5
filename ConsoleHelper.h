@@ -40,6 +40,8 @@ public:
 	CDP5Status DP5Status;
 	/// LibUsb is connected if true.
 	bool LibUsb_isConnected;
+	/// Specify if device connection is closed
+	bool bConnectionClosed;
 	/// LibUsb number of devices found.
 	int  LibUsb_NumDevices;
 	void KeepMX2_Alive();
@@ -82,7 +84,7 @@ public:
 	/// LibUsb connect to a specific DPP device.
 	bool LibUsb_Connect_Specific_DPP(int Num_Device);
 	/// LibUsb close the current connection.
-	void LibUsb_Close_Connection();
+	bool LibUsb_Close_Connection();
 	/// LibUsb send a command that does not require additional processing.
 	bool LibUsb_SendCommand(TRANSMIT_PACKET_TYPE XmtCmd);
 	/// LibUsb send a command that requires configuration options processing.

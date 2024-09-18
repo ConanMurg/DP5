@@ -399,15 +399,19 @@ bool CConsoleHelper::LibUsb_Connect_Specific_DPP(int Device_Num)
 	return (LibUsb_isConnected);
 }
 
-void CConsoleHelper::LibUsb_Close_Connection()
-{
+bool CConsoleHelper::LibUsb_Close_Connection()
+{	
+	bConnectionClosed = false;
+
 	if (DppLibUsb.bDeviceConnected) { // clean-up: close usb connection
 		DppLibUsb.bDeviceConnected = false;
 		DppLibUsb.CloseUSBDevice(DppLibUsb.DppLibusbHandle);
 		LibUsb_isConnected = false;
 		LibUsb_NumDevices = 0;
 		DppLibUsb.DeinitializeLibusb();
+		bConnectionClosed = true;
 	}
+	return (bConnectionClosed);
 }
 
 bool CConsoleHelper::LibUsb_SendCommand(TRANSMIT_PACKET_TYPE XmtCmd)
