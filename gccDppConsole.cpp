@@ -44,13 +44,13 @@ extern "C" {
 		}
 	}
 
-
 	int CountDP5Devices()
 	{
 		int NumDevices;
 		NumDevices = chdpp.LibUsb_CountDP5Devices();
 		return (NumDevices);
 	}
+
 
 	bool ConnectToSpecificDPP(int NumDevice)
 	{
@@ -64,11 +64,11 @@ extern "C" {
 
 	int GetDeviceType()
 	{
-		iDeviceType = 0;
+		int iDeviceType = 0;
 		if (chdpp.LibUsb_isConnected) { // send and receive status
 			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_STATUS)) {	// request status
 				iDeviceType = chdpp.iDeviceType;
-				cout << "Device: " iDeviceType << endl;
+				cout << "Device: " << iDeviceType << endl;
 				return iDeviceType;
 			} 
 		} 
