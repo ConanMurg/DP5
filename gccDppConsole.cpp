@@ -66,6 +66,10 @@ extern "C" {
 	{
 		if (chdpp.LibUsb_isConnected) { // send and receive status
 			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_STATUS)) {	// request status
+				DppStatusString
+				if (chdpp.LibUsb_ReceiveData()) {
+					memcpy(TEMP_DATA, chdpp.DppStatusString.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
+				}
 				return true;
 			} else {
 				cout << "Error sending status." << endl;
@@ -75,6 +79,26 @@ extern "C" {
 		}
 
 		return false;
+	}
+
+	// Return the Status of the DP5 device
+	const char* GetDppStatusRet()
+	{
+		if (chdpp.LibUsb_isConnected) { // send and receive status
+			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_STATUS)) {	// request status
+				DppStatusString
+				if (chdpp.LibUsb_ReceiveData()) {
+					memcpy(TEMP_DATA, chdpp.DppStatusString.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
+				}
+				return DppStatusString.c_str();
+			} else {
+				cout << "Error sending status." << endl;
+			}
+		} else {
+			cout << "Device Not Connected." << endl;
+		}
+
+		return "";
 	}
 
 	// Read the full configuration of the DP5 Device.
@@ -152,10 +176,6 @@ extern "C" {
 	}
 
 
-	void free_memory(long* ptr) {
-		delete[] ptr;
-	}
-
 	bool ResetDevice()
 	{
 		cout << "\t\tDisabling MCA for spectrum data/status clear." << endl;
@@ -179,8 +199,16 @@ extern "C" {
 	} 
 
 
+	// Clears memory after acquiring spectrum.
+	void free_memory(long* ptr) {
+		delete[] ptr;
+	}
+
+	// Acquires and returns spectra from DP5
+	//		Requires free_memory to be called after use to clear memory.
 	long* AcquireSpectrum()
 	{
+		// Create a variable to store the spectrum data, to return to the Python Interface
 		long* TEMP_DATA = new long[2048];
 
 		if (chdpp.LibUsb_SendCommand(XMTPT_SEND_SPECTRUM_STATUS)) {	// request spectrum+status
@@ -195,13 +223,6 @@ extern "C" {
 	}
 
 	// Acquire Spectrum
-	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS)		//disable for data/status clear
-	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_SEND_CLEAR_SPECTRUM_STATUS)  //clear spectrum/status
-	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_ENABLE_MCA_MCS);		// enabling MCA for spectrum acquisition
-	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_SEND_SPECTRUM_STATUS)) // request spectrum+status
-	//		CConsoleHelper::LibUsb_ReceiveData()							// process spectrum and data
-	//		CConsoleHelper::ConsoleGraph()	(low resolution display)		// graph data on console with status
-	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS)		// disable mca after acquisition
 	void AcquireSpectrumOld()
 	{
 		int MaxMCA = 2;
@@ -285,7 +306,6 @@ extern "C" {
 	}
 
 	// run GetDppStatus(); first to get PC5_PRESENT, DppType
-	// Includes Configuration Oversize Fix 20141224
 	bool SendConfigFileToDpp(){
 		string strFilename = "PX5_Console_Test.txt";
 		std::string strCfg;
@@ -300,19 +320,13 @@ extern "C" {
 		unsigned char DPP_ECO;
 
 		isPC5Present = chdpp.DP5Stat.m_DP5_Status.PC5_PRESENT;
-		cout << "isPC5Present" << isPC5Present <<endl;
-
+		// cout << "isPC5Present" << isPC5Present <<endl;
 		DppType = chdpp.DP5Stat.m_DP5_Status.DEVICE_ID;
-
-		cout << DppType <<endl;
+		// cout << DppType <<endl;
 		isDP5_RevDxGains = chdpp.DP5Stat.m_DP5_Status.isDP5_RevDxGains;
-
-		cout << isDP5_RevDxGains <<endl;
+		// cout << isDP5_RevDxGains <<endl;
 		DPP_ECO = chdpp.DP5Stat.m_DP5_Status.DPP_ECO;
-
-		cout << DPP_ECO <<endl;
-
-
+		// cout << DPP_ECO <<endl;
 		strCfg = chdpp.SndCmd.AsciiCmdUtil.GetDP5CfgStr(strFilename);
 		strCfg = chdpp.SndCmd.AsciiCmdUtil.RemoveCmdByDeviceType(strCfg,isPC5Present,DppType,isDP5_RevDxGains,DPP_ECO);
 		lCfgLen = (long)strCfg.length();
@@ -343,8 +357,6 @@ extern "C" {
 	}
 
 	// Close Connection
-	//		CConsoleHelper::LibUsb_isConnected			// LibUsb DPP connection indicator
-	//		CConsoleHelper::LibUsb_Close_Connection()	// close connection
 	void CloseConnection()
 	{
 		if (chdpp.LibUsb_isConnected) { // send and receive status
