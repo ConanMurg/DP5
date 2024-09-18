@@ -29,23 +29,7 @@ bool bTubeOn = false;
 
 
 extern "C" {
-
-	// void ConnectToDefaultDPP()
-	// {
-	// 	cout << endl;
-	// 	cout << "Running DPP LibUsb tests from console..." << endl;
-	// 	cout << endl;
-	// 	cout << "\tConnecting to default LibUsb device..." << endl;
-	// 	if (chdpp.LibUsb_Connect_Default_DPP()) {
-	// 		cout << "\t\tLibUsb DPP device connected." << endl;
-	// 		cout << "\t\tLibUsb DPP devices present: "  << chdpp.LibUsb_NumDevices << endl;
-	// 	} else {
-	// 		cout << "\t\tLibUsb DPP device not connected." << endl;
-	// 		cout << "\t\tNo LibUsb DPP device present." << endl;
-	// 	}
-	// 	cout << endl;
-	// }
-
+	// Connect to a specific DPP device
 	bool ConnectToSpecificDPP(int NumDevice)
 	{
 		if (chdpp.LibUsb_Connect_Specific_DPP(NumDevice)) {
@@ -56,6 +40,7 @@ extern "C" {
 		}
 	}
 
+	// Identify if device is the MX2 device.
     int GetDeviceType()
 	{
 		int iDeviceType = 0;

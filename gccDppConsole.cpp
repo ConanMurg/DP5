@@ -27,24 +27,7 @@ bool bTubeOn = false;
 
 
 extern "C" {
-// connect to default dpp
-//		CConsoleHelper::LibUsb_Connect_Default_DPP	// LibUsb connect to default DPP
-	bool ConnectToDefaultDPP()
-	{
-		// cout << endl;
-		// cout << "Running DPP LibUsb tests from console..." << endl;
-		// cout << endl;
-		// cout << "\tConnecting to default LibUsb device..." << endl;
-		if (chdpp.LibUsb_Connect_Default_DPP()) {
-			cout << "\t\tLibUsb DPP devices present: "  << chdpp.LibUsb_NumDevices << endl;
-			return true;
-		} else {
-			cout << "\t\tNo LibUsb DPP device present." << endl;
-			return false;
-		}
-	}
-
-
+	// Counts the number of DPP devices - Only run this if no devices are connected.
 	int CountDP5Devices()
 	{
 		int NumDevices;
@@ -52,7 +35,7 @@ extern "C" {
 		return (NumDevices);
 	}
 
-
+	// Connect to a specific DPP device
 	bool ConnectToSpecificDPP(int NumDevice)
 	{
 		if (chdpp.LibUsb_Connect_Specific_DPP(NumDevice)) {
@@ -63,11 +46,12 @@ extern "C" {
 		}
 	}
 
+	// Identify if DPP device is the DP5 device. Returns 1 for DP5 and 2 for MX2
 	int GetDeviceType()
 	{
 		int iDeviceType = 0;
-		if (chdpp.LibUsb_isConnected) { // send and receive status
-			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_STATUS)) {	// request status
+		if (chdpp.LibUsb_isConnected) {
+			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_STATUS)) {
 				iDeviceType = chdpp.iDeviceType;
 				cout << "Device: " << iDeviceType << endl;
 				return iDeviceType;
@@ -77,42 +61,7 @@ extern "C" {
 		return iDeviceType;
 	}
 
-
-	// bool ConnectToCorrectDPP()
-	// {
-	// 	int NumDevices;
-	// 	NumDevices = chdpp.LibUsb_CountDP5Devices();
-	// 	// If there are Amptek Devices connected
-	// 	if (NumDevices > 0) {
-	// 		// Try to connect to each - if correct device identified return true
-	// 		for (int i = 0; i < NumDevices; ++i) {
-	// 			if (chdpp.LibUsb_Connect_Specific_DPP(NumDevices)) {
-
-	// 				cout << "Connected" << endl;
-	// 				return true;
-	// 			}
-	// 		}
-	// 	} 
-			
-	// 	cout << "No Devices Present" << endl;
-	// 	return false;
-	// }
-
-
-	void NetFinder()
-	{
-		if (chdpp.LibUsb_SendCommand(XMTPT_SEND_NETFINDER_PACKET)) {	// request status
-			cout << "\t\t\tNetfinder Packet." << endl;
-		} else {
-			cout << "\t\t\tError sending status." << endl;
-		}
-	}
-
-	// Get DPP Status
-	//		CConsoleHelper::LibUsb_isConnected							// check if DPP is connected
-	//		CConsoleHelper::LibUsb_SendCommand(XMTPT_SEND_STATUS_MX2)	// request status
-	//		CConsoleHelper::LibUsb_ReceiveData()						// parse the status
-	//		CConsoleHelper::DppStatusString								// display status string
+	// Return the Status of the DP5 device
 	bool GetDppStatus()
 	{
 		if (chdpp.LibUsb_isConnected) { // send and receive status
@@ -128,15 +77,7 @@ extern "C" {
 		return false;
 	}
 
-
-	// Read Full DPP Configuration From Hardware			// request status before sending/receiving configurations
-	//		CONFIG_OPTIONS									// holds configuration command options
-	//		CConsoleHelper::CreateConfigOptions				// creates configuration options from last status read
-	//      CConsoleHelper::ClearConfigReadFormatFlags();	// clear configuration format flags, for cfg readback
-	//      CConsoleHelper::CfgReadBack = true;				// requesting general readback format
-	//		CConsoleHelper::LibUsb_SendCommand_Config		// send command with options
-	//		CConsoleHelper::LibUsb_ReceiveData()			// parse the configuration
-	//		CConsoleHelper::HwCfgReady						// config is ready
+	// Read the full configuration of the DP5 Device.
 	void ReadDppConfigurationFromHardware()
 	{	
 		bool bDisplayCfg=true;
@@ -423,7 +364,7 @@ extern "C" {
 	}
 
 	// Saving spectrum file
-	void SaveSpectrumFile()
+	void SaveSpectrumFile(string strFilename)
 	{
 		string strSpectrum;											// holds final spectrum file
 		chdpp.sfInfo.strSpectrumStatus = chdpp.DppStatusString;		// save last status after acquisition
@@ -433,56 +374,12 @@ extern "C" {
 		chdpp.sfInfo.strTag = "TestTag";										// tag
 		// create spectrum file, save file to string
 		strSpectrum = chdpp.CreateMCAData(chdpp.DP5Proto.SPECTRUM.DATA,chdpp.sfInfo,chdpp.DP5Stat.m_DP5_Status);
-		chdpp.SaveSpectrumStringToFile(strSpectrum);	// save spectrum file string to file
+		chdpp.SaveSpectrumStringToFile(strSpectrum, strFilename);	// save spectrum file string to file
 	}
 
-	// int main(int argc, char* argv[])
-	// {
-	// 	//system(CLEAR_TERM);
-	// 	ConnectToDefaultDPP();
-	// 	// KeepAlive();
-	// 	cout << "Press the Enter key to continue . . .";
-	// 	_getch();
-
-	// 	if(!chdpp.LibUsb_isConnected) { return 1; }
-
 		
-	// 	//system(CLEAR_TERM);
 	// 	chdpp.DP5Stat.m_DP5_Status.SerialNumber = 0;
-	// 	GetDppStatus();
-	// 	// KeepAlive();
-	// 	cout << "Press the Enter key to continue . . .";
-	// 	_getch();
-
 	// 	if (chdpp.DP5Stat.STATUS_MNX.SN == 0) { return 1; }
-
-
-
-
-
-	// 	//////	system("cls");
-	// 	SendConfigFileToDpp();    // calls SendCommandString
-	// 	//////	system("Pause");
-
-
-	// 	//system(CLEAR_TERM);
-	// 	ReadDppConfigurationFromHardware();
-	// 	cout << "Press the Enter key to continue . . .";
-	// 	//_getch(); 
-
-	// 	//system(CLEAR_TERM);
-	// 	DisplayPresets();
-	// 	cout << "Press the Enter key to continue . . .";
-	// 	//_getch(); 
-
-	// 	//system(CLEAR_TERM);
-	// 	SendPresetAcquisitionTime("PRET=20;");
-	// 	//SaveSpectrumConfig();
-	// 	//cout << "Press the Enter key to continue . . .";
-	// 	//_getch(); 
-
-	// 	//system(CLEAR_TERM);
-	// 	//AcquireSpectrum();
 	// 	//SaveSpectrumFile();
 	// 	//cout << "Press the Enter key to continue . . .";
 	// 	//_getch(); 
@@ -496,14 +393,4 @@ extern "C" {
 	// 	//ReadConfigFile();
 	// 	//cout << "Press the Enter key to continue . . .";
 	// 	//_getch(); 
-
-	// 	//system(CLEAR_TERM);
-	// 	CloseConnection();
-	// 	cout << "Press the Enter key to continue . . ." << endl;
-	// 	_getch(); 
-
-	// 	return 0;
-	// }
-
-
 }

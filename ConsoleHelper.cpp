@@ -1202,14 +1202,12 @@ string CConsoleHelper::CreateMCAData(long m_larDataBuffer[], SpectrumFileType sf
 	return (strMCA);
 }
 
-void CConsoleHelper::SaveSpectrumStringToFile(string strData)
+void CConsoleHelper::SaveSpectrumStringToFile(string strData, string strFilename)
 {
 	FILE  *out;
 	string strFilename;
 	string strError;
 	stringex strfn;
-
-	strFilename = "SpectrumData.mca";
 
 	if ( (out = fopen(strFilename.c_str(),"wb")) == (FILE *) NULL)
 		strError = strfn.Format("Couldn't open %s for writing.\n", strFilename.c_str());
