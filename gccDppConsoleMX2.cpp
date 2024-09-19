@@ -246,9 +246,7 @@ extern "C" {
 	// }
 
 
-
-
-	void TurnVolumeOn()
+	bool TurnVolumeOn()
 	{
 		cout << "\t\t\tTurning Volume ON Now" << endl;
 		string strVol;
@@ -258,14 +256,17 @@ extern "C" {
 		if (chdpp.LibUsb_isConnected) { // send and receive status
 
 			chdpp.SendMX2_Volume(strVol);
+			return 1;
 
 		} else {
-		cout << "Device not connected" << endl;
+			cout << "Device not connected" << endl;
 		}
+		return 0;
+		
 	}
 
 
-	void TurnVolumeOff()
+	bool TurnVolumeOff()
 	{
 		cout << "\t\t\tTurning Volume OFF Now" << endl;
 		string strVol;
@@ -275,10 +276,12 @@ extern "C" {
 		if (chdpp.LibUsb_isConnected) { // send and receive status
 
 			chdpp.SendMX2_Volume(strVol);
+			return 1;
 
 		} else {
-		cout << "Device not connected" << endl;
+			cout << "Device not connected" << endl;
 		}
+		return 0;
 	}
 
 

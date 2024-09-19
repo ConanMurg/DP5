@@ -216,7 +216,7 @@ public:
     string CreateMCAData(long m_larDataBuffer[], SpectrumFileType sfInfo, DP4_FORMAT_STATUS cfgStatusLst);
 	/// Saves a spectrum data string to a default file (SpectrumData.mca).
 	void SaveSpectrumStringToFile(string strData, string strFilename);
-    string CreateSpectrumConfig(string strRawCfgIn) ;
+    string CreateSpectrumConfig(string strRawCfgIn);
 	vector<string> MakeDp5CmdList();
 	SpectrumFileType sfInfo;
 

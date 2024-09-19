@@ -66,10 +66,6 @@ extern "C" {
 	{
 		if (chdpp.LibUsb_isConnected) { // send and receive status
 			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_STATUS)) {	// request status
-				DppStatusString
-				if (chdpp.LibUsb_ReceiveData()) {
-					memcpy(TEMP_DATA, chdpp.DppStatusString.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
-				}
 				return true;
 			} else {
 				cout << "Error sending status." << endl;
@@ -86,11 +82,11 @@ extern "C" {
 	{
 		if (chdpp.LibUsb_isConnected) { // send and receive status
 			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_STATUS)) {	// request status
-				DppStatusString
-				if (chdpp.LibUsb_ReceiveData()) {
-					memcpy(TEMP_DATA, chdpp.DppStatusString.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
-				}
-				return DppStatusString.c_str();
+				// DppStatusString
+				// if (chdpp.LibUsb_ReceiveData()) {
+				// 	memcpy(TEMP_DATA, chdpp.DppStatusString.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
+				// }
+				return chdpp.DppStatusString.c_str();
 			} else {
 				cout << "Error sending status." << endl;
 			}
@@ -115,7 +111,7 @@ extern "C" {
 		cout << "\tRequesting Full Configuration..." << endl;
 		chdpp.ClearConfigReadFormatFlags();	// clear all flags, set flags only for specific readback properties
 		//chdpp.DisplayCfg = false;	// DisplayCfg format overrides general readback format
-		chdpp.CfgReadBack = true;	// requesting general readback format
+		// chdpp.CfgReadBack = true;	// requesting general readback format
 		if (chdpp.LibUsb_SendCommand_Config(XMTPT_FULL_READ_CONFIG_PACKET, CfgOptions)) {	// request full configuration
 			if (chdpp.LibUsb_ReceiveData()) {
 				if (chdpp.HwCfgReady) {		// config is ready
@@ -366,7 +362,7 @@ extern "C" {
 		}
 	}
 
-	// Helper functions for saving spectrum files
+	// Helper function for saving spectrum files
 	void SaveSpectrumConfig()
 	{
 		string strSpectrumConfig;
@@ -376,9 +372,12 @@ extern "C" {
 	}
 
 	// Saving spectrum file
-	void SaveSpectrumFile(string strFilename)
+	void SaveSpectrumFile(const char* strFilenamePy)
 	{
-		string strSpectrum;											// holds final spectrum file
+		string strSpectrum;	
+		string strFilename(strFilenamePy);
+		
+												// holds final spectrum file
 		chdpp.sfInfo.strSpectrumStatus = chdpp.DppStatusString;		// save last status after acquisition
 		chdpp.sfInfo.m_iNumChan = chdpp.mcaCH;						// number channels in spectrum
 		chdpp.sfInfo.SerialNumber = chdpp.DP5Stat.m_DP5_Status.SerialNumber;	// dpp serial number
@@ -386,7 +385,9 @@ extern "C" {
 		chdpp.sfInfo.strTag = "TestTag";										// tag
 		// create spectrum file, save file to string
 		strSpectrum = chdpp.CreateMCAData(chdpp.DP5Proto.SPECTRUM.DATA,chdpp.sfInfo,chdpp.DP5Stat.m_DP5_Status);
-		chdpp.SaveSpectrumStringToFile(strSpectrum, strFilename);	// save spectrum file string to file
+		
+		cout << "StrFilename: " << strFilename << endl;
+		// chdpp.SaveSpectrumStringToFile(strSpectrum, strFilename);	// save spectrum file string to file
 	}
 
 		
