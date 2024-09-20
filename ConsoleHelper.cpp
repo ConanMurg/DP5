@@ -163,7 +163,7 @@ void CConsoleHelper::ParsePacketEx(Packet_In PIN, DppStateType DppState)
 			}
 			DP5Stat.Process_MNX_Status(&DP5Stat.STATUS_MNX);
 			DppStatusString = DP5Stat.MiniX2_StatusToString(DP5Stat.STATUS_MNX);
-			cout << DppStatusString << endl;
+			//cout << DppStatusString << endl;
 			break;
 		case preqProcessSpectrum:
 		cout << "RemCallParsePkt: ProcessSpectrum" << endl;	
@@ -181,7 +181,13 @@ void CConsoleHelper::ParsePacketEx(Packet_In PIN, DppStateType DppState)
 		//	break;
 		case preqProcessCfgRead:
 			cout << "RemCallParsePkt: ProcessCfgRead" << endl;
-			ProcessCfgReadEx(DP5Proto.PIN, ParsePkt.DppState);
+			if (iDeviceType == 2) {
+				ProcessCfgReadM2Ex(DP5Proto.PIN, ParsePkt.DppState);
+			}
+			else {
+				ProcessCfgReadEx(DP5Proto.PIN, ParsePkt.DppState);
+			}
+			
 			break;
 		case preqProcessTubeInterlockTableMX2:
 			cout << "RemCallParsePkt: ProcessTubeInterlockTable" << endl;

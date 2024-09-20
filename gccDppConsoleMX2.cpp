@@ -79,6 +79,22 @@ extern "C" {
 		return false;
 	}
 
+	// Return the Status of the DP5 device
+	const char* GetDppStatusRet()
+	{
+		if (chdpp.LibUsb_isConnected) { // send and receive status
+			if (chdpp.LibUsb_SendCommand(XMTPT_SEND_STATUS_MX2)) {	// request status
+				return chdpp.DppStatusString.c_str();
+			} else {
+				cout << "Error sending status." << endl;
+			}
+		} else {
+			cout << "Device Not Connected." << endl;
+		}
+
+		return "";
+	}
+
 	void GetInterlockStatus()
 	{
 		if (chdpp.LibUsb_isConnected) { // send and receive status
@@ -134,10 +150,9 @@ extern "C" {
 		stringHV = "15.00";
 		stringI = "15.00";
 		
-		if (chdpp.LibUsb_isConnected) { // send and receive status
+		if (chdpp.LibUsb_isConnected) {
 
 			chdpp.SendMX2_HVandI(stringHV, stringI);
-			//GetDppStatus();
 			bTubeOn = true;
 		} else {
 		cout << "Device not connected" << endl;
@@ -147,17 +162,16 @@ extern "C" {
 	void TurnHVOff()
 	{
 		cout << "\t\t\tTurning Tube OFF Now" << endl;
-		bTubeOn = false;
+		
 		string stringHV;
 		string stringI;
 
-		stringHV = "0.00";
-		stringI = "0.00";
+		stringHV = "0";
+		stringI = "0";
 		
-		if (chdpp.LibUsb_isConnected) { // send and receive status
-
-			chdpp.SendMX2_HV(stringHV);
-
+		if (chdpp.LibUsb_isConnected) {
+			chdpp.SendMX2_HVandI(stringHV, stringI);
+			bTubeOn = false;
 		} else {
 		cout << "Device not connected" << endl;
 		}
