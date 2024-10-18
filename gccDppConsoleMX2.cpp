@@ -147,8 +147,8 @@ extern "C" {
 		string stringHV;
 		string stringI;
 
-		stringHV = "15.00";
-		stringI = "15.00";
+		stringHV = "5.00";
+		stringI = "5.00";
 		
 		if (chdpp.LibUsb_isConnected) {
 
