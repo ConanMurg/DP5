@@ -152,7 +152,7 @@ void CConsoleHelper::ParsePacketEx(Packet_In PIN, DppStateType DppState)
 				DP5Stat.m_DP5_Status.RAW[idxStatus] = DP5Proto.PIN.DATA[idxStatus];
 			}
 			DP5Stat.Process_Status(&DP5Stat.m_DP5_Status);
-			DppStatusString = DP5Stat.ShowStatusValueStrings(DP5Stat.m_DP5_Status);
+			DppStatusString = DP5Stat.GetStatusValueStrings(DP5Stat.m_DP5_Status);
 			cout << DppStatusString << endl;
 			break;
 		case preqProcessStatusMX2:

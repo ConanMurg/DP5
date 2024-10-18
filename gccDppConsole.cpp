@@ -86,7 +86,10 @@ extern "C" {
 				// if (chdpp.LibUsb_ReceiveData()) {
 				// 	memcpy(TEMP_DATA, chdpp.DppStatusString.DATA, sizeof(long) * chdpp.DP5Proto.SPECTRUM.CHANNELS);
 				// }
-				return chdpp.DppStatusString.c_str();
+				static std::string statusStringCopy;
+    			statusStringCopy = chdpp.DppStatusString;
+				return statusStringCopy.c_str();
+
 			} else {
 				cout << "Error sending status." << endl;
 			}
@@ -184,6 +187,37 @@ extern "C" {
 		chdpp.LibUsb_SendCommand(XMTPT_ENABLE_MCA_MCS);
 		Sleep(1000);
 		return true;
+	}
+
+	bool DisableDevice()
+	{
+		cout << "\t\tDisabling MCA for spectrum data/status clear." << endl;
+		if (chdpp.LibUsb_SendCommand(XMTPT_DISABLE_MCA_MCS)) {
+			return true;
+			}
+
+		return false;
+		
+	}
+
+	bool ClearDevice()
+	{
+		cout << "\t\tClearing spectrum data/status." << endl;
+		if (chdpp.LibUsb_SendCommand(XMTPT_SEND_CLEAR_SPECTRUM_STATUS)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	bool EnableDevice()
+	{
+		cout << "\t\tEnabling MCA for spectrum data acquisition with status ." << endl;
+		if (chdpp.LibUsb_SendCommand(XMTPT_ENABLE_MCA_MCS)) {
+			return true;
+		}
+
+		return false;
 	}
 
 
